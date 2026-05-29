@@ -70,6 +70,7 @@ def backtest(
     vix: pd.Series | None = None,
     vix_min: float = 0.0,
     vix_max: float = inf,
+    eod_flat: bool = False,
 ) -> tuple[list[Trade], pd.Series]:
     # No leverage (paper-honest): deployed capital can never exceed 1.0.
     if scale_in and base_frac + add_frac > 1.0 + 1e-9:
@@ -87,6 +88,11 @@ def backtest(
     use_vix = vix is not None
     if use_vix:
         data = data.assign(vix=vix.reindex(data.index).ffill())
+    # EOD-flat (funded/prop rule): never hold overnight. Mark the last bar of each
+    # trading day so the loop can force a close there. Intraday data only.
+    if eod_flat:
+        bar_date = data.index.to_series().dt.date
+        data = data.assign(is_day_final=(bar_date != bar_date.shift(-1)))
     round_turn = 2.0 * fee_bps / 10_000.0
     use_stop = sl_mult > 0
     fixed_target = strategy == "trend"
@@ -140,6 +146,8 @@ def backtest(
                 close_trade(float(row["Close"]), ts, "time")
             elif bool(row["raw_sell"]):
                 close_trade(float(row["Close"]), ts, "signal")
+            elif eod_flat and bool(row["is_day_final"]):
+                close_trade(float(row["Close"]), ts, "eod")   # flat overnight
             elif (scale_in and len(tranches) < 2
                   and float(row["disp_rsi"]) < add_rsi
                   and float(row["Close"]) < tranches[-1][0]):

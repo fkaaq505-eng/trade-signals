@@ -56,7 +56,8 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `news.py` (headlines+events) · `notify.py` (ntfy push, short message) ·
 `sweep.py` (param search) · `compare.py` (strategy bake-off) ·
 `walkforward.py` (out-of-sample validation) · `vixtest.py` (VIX-regime experiment) ·
-`funded.py` (prop-firm MAE/drawdown reality check) ·
+`funded.py` (prop MAE/drawdown reality check) · `fundeval.py` (eval pass/fail sim) ·
+`funded_intraday.py` (intraday hard-stop + EOD-flat structure) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Next steps (in order)
@@ -94,6 +95,15 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
    ~17% sized). Edge = no stop + sit in cash = opposite of prop rules. Best fit
    stays a personal cash/paper account. A real funded variant would be a SEPARATE
    intraday + hard-stop + EOD-flat strategy, scoped to one firm's exact limits.
+8. **Funded intraday — STRUCTURE built, EDGE unproven (`funded_intraday.py`,
+   `fundeval.py`).** Added `eod_flat` to the engine (close on each day's last bar)
+   and an MAE-based eval simulator. RSI2 on 1h SPY + hard ATR stop + EOD-flat gives
+   the prop-compatible risk shape (worst MAE −1.95%, no overnight gap) — but on the
+   only free data available (~3y, one bull regime) it makes +6–8% while buy-hold
+   made +70%: no demonstrated edge. Honest blocker: a money-making intraday edge
+   CANNOT be validated on free Yahoo data (intraday history capped). Real funded
+   work needs paid multi-year intraday data + forward paper testing. The validated
+   DAILY strategy is deliberately KEPT (not deleted) as the only proven asset.
 
 ---
 
