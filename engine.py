@@ -16,6 +16,7 @@ from math import inf
 
 import pandas as pd
 
+from news import high_impact_events
 from sessions import in_session_mask
 from strategy import ATR_SL_MULT, REWARD_RISK, build_indicators
 
@@ -58,6 +59,7 @@ def backtest(
     session: str = "us_morning",
     rsi_buy: float = 10.0,
     rsi_exit: float = 65.0,
+    skip_events: bool = False,
 ) -> tuple[list[Trade], pd.Series]:
     data = build_indicators(df, strategy=strategy, session=session,
                             rsi_buy=rsi_buy, rsi_exit=rsi_exit)
@@ -100,11 +102,15 @@ def backtest(
                 close_trade(float(row["Close"]), ts, "signal")
 
         if not in_pos and bool(row["raw_buy"]) and row["atr"] > 0:
-            entry = float(row["Close"])
-            stop = entry - sl_mult * float(row["atr"]) if use_stop else -inf
-            target = entry + reward_risk * (entry - stop) if fixed_target else inf
-            entry_ts = ts
-            in_pos = True
+            # Event-risk filter: skip entries on high-impact macro days (no
+            # network in backtest -> finnhub_key="" so only FOMC/NFP rules apply).
+            blocked = skip_events and high_impact_events(ts.date(), finnhub_key="")
+            if not blocked:
+                entry = float(row["Close"])
+                stop = entry - sl_mult * float(row["atr"]) if use_stop else -inf
+                target = entry + reward_risk * (entry - stop) if fixed_target else inf
+                entry_ts = ts
+                in_pos = True
 
         equity_curve.append(equity)
 

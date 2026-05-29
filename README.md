@@ -77,6 +77,23 @@ see what happens. That *is* the learning loop.
 - `buy_hold_return_%` — **the honesty check.** If the strategy can't beat just
   buying and holding, the only reason to run it is lower drawdown.
 
+## News & event-risk awareness (auto, free)
+
+Research: mean-reversion breaks around high-impact macro events (FOMC, CPI, NFP) —
+they trend, they don't revert. So the tool is event-aware.
+
+- **Headlines** — `news.py` pulls fresh SPY/QQQ headlines from Yahoo RSS (keyless).
+  Included automatically in every phone push. Add to a live check with `--news`.
+- **Event flag** — built-in 2026 FOMC dates ([Fed](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm))
+  + NFP (first Friday). On those days the push warns "HIGH-IMPACT TODAY — expect whipsaw".
+- **Backtest filter** — `--skip-events` skips entries on high-impact days. On SPY
+  meanrev it nudged win rate 77.2→78%, profit factor 2.44→2.56, drawdown −11.4→−9.5%.
+- **Optional richer calendar** — set a free [Finnhub](https://finnhub.io) key as
+  `FINNHUB_KEY` to auto-detect more events (CPI etc.). Degrades silently without it.
+
+Sources: [event filters for mean reversion](https://www.buildalpha.com/news-event-trading/),
+[free calendar APIs](https://finnhub.io/docs/api/economic-calendar).
+
 ## Notifications when you're away
 
 Get a phone push near the US close when a signal fires — laptop closed, no

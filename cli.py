@@ -17,9 +17,11 @@ NEVER connects to a broker. NEVER places orders. Informational only.
 from __future__ import annotations
 
 import argparse
+from datetime import date
 
 from data import fetch
 from engine import backtest, live_signal, stats
+from news import news_block
 from sessions import SESSIONS
 
 DEFAULT_SYMBOL = "SPY"   # S&P500=SPY/^GSPC, Nasdaq=QQQ/^NDX/^IXIC
@@ -47,7 +49,8 @@ def cmd_backtest(df, args):
     trades, equity = backtest(
         df, strategy=args.strategy, sl_mult=args.sl_mult, reward_risk=args.rr,
         max_hold_hours=args.max_hold_hours, fee_bps=args.fee_bps,
-        session=args.session, rsi_buy=args.rsi_buy, rsi_exit=args.rsi_exit)
+        session=args.session, rsi_buy=args.rsi_buy, rsi_exit=args.rsi_exit,
+        skip_events=args.skip_events)
     buy_hold = df["Close"] / df["Close"].iloc[0]
     s = stats(trades, equity, buy_hold)
     print(f"\n=== BACKTEST: {args.symbol}  strategy={args.strategy}  "
@@ -76,6 +79,10 @@ def cmd_live(df, args):
         print(f"  -> stop          {sig.suggested_stop}")
     if sig.suggested_target is not None:
         print(f"  -> target        {sig.suggested_target}")
+    if args.news:
+        nb = news_block([args.symbol], date.today())
+        if nb:
+            print("\n" + nb)
     print("\n  NOTE: rules-based output, not advice. You decide. Paper-trade first.")
 
 
@@ -93,6 +100,9 @@ def main():
     p.add_argument("--fee-bps", type=float, default=1.0)
     p.add_argument("--rsi-buy", type=float, default=10.0, help="meanrev: buy when RSI(2) below this")
     p.add_argument("--rsi-exit", type=float, default=65.0, help="meanrev: exit when RSI(2) above this")
+    p.add_argument("--skip-events", action="store_true",
+                   help="backtest: skip entries on high-impact days (FOMC/NFP)")
+    p.add_argument("--news", action="store_true", help="live: show headlines + event flag")
     args = resolve(p.parse_args())
 
     df = fetch(args.symbol, args.period, args.interval)

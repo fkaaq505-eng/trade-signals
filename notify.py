@@ -23,6 +23,7 @@ from zoneinfo import ZoneInfo
 
 from data import fetch
 from engine import live_signal
+from news import news_block
 
 ET = ZoneInfo("America/New_York")
 AST = ZoneInfo("Asia/Riyadh")   # user is in Saudi Arabia (UTC+3, no DST)
@@ -79,9 +80,16 @@ def main() -> None:
               "\nUS close 16:00 ET = 23:00 AST (summer) / 00:00 (winter)."
               "\nPrefer daytime? Act at next US open ~16:30/17:30 AST, same signal."
               "\nRules-based, not advice. You decide. Paper first.")
-    body = "\n".join(lines) + footer
 
-    if actionable or brief:
+    body = "\n".join(lines)
+    nb = news_block(SYMBOLS, datetime.now(ET).date())  # fresh news + event flag each run
+    if nb:
+        body += "\n\n" + nb
+    body += footer
+
+    # Push on an actionable signal, on a brief, OR when a high-impact event lands.
+    has_event = "HIGH-IMPACT TODAY" in nb
+    if actionable or brief or has_event:
         title = "Morning brief" if brief else "Trade signal"
         push(f"{title} ({STRATEGY})", body)
     else:
