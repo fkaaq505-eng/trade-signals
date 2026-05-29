@@ -1,0 +1,37 @@
+name: trade-signal-notify
+
+# Pushes a phone notification (via ntfy) for SPY/QQQ signals. Runs on GitHub's
+# free servers, so it works with your laptop closed. It never trades; only alerts.
+#
+# Two notifications per day, tuned for Saudi time (AST = UTC+3):
+#   - CLOSE ALERT  near US close (23:00 AST summer / 00:00 winter): only if BUY/SELL.
+#   - MORNING BRIEF 08:00 AST: always sends a status recap so you can act at the
+#                   next US open (~16:30/17:30 AST) at a civil hour.
+
+on:
+  schedule:
+    - cron: "45 19 * * 1-5"   # close alert, 15:45 ET during EDT (summer)
+    - cron: "45 20 * * 1-5"   # close alert, 15:45 ET during EST (winter)
+    - cron: "0 5 * * 1-5"     # morning brief, 05:00 UTC = 08:00 AST
+  workflow_dispatch: {}        # manual run from the Actions tab (sends a brief)
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Check signals and notify
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          STRATEGY: meanrev
+          SYMBOLS: SPY,QQQ
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 5 * * 1-5" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python notify.py --brief --force
+          else
+            python notify.py
+          fi
