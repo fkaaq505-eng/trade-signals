@@ -32,6 +32,8 @@ DEFAULTS = {
                 "max_hold": 48.0, "session": "us_morning"},
     "meanrev": {"interval": "1d", "period": "12y", "sl_mult": 0.0,
                 "max_hold": 240.0, "session": "all"},
+    "bb":      {"interval": "1d", "period": "12y", "sl_mult": 0.0,
+                "max_hold": 240.0, "session": "all"},
 }
 
 
@@ -43,7 +45,9 @@ def resolve(args):
     args.sl_mult = d["sl_mult"] if args.sl_mult is None else args.sl_mult
     args.max_hold_hours = d["max_hold"] if args.max_hold_hours is None else args.max_hold_hours
     if args.skip_events is None:
-        args.skip_events = args.strategy == "meanrev"   # event filter on by default for meanrev
+        args.skip_events = args.strategy in ("meanrev", "bb")  # event filter on for mean reversion
+    if args.down_days is None:
+        args.down_days = 2 if args.strategy == "meanrev" else 0  # confirmed-pullback filter
     return args
 
 
@@ -52,7 +56,7 @@ def cmd_backtest(df, args):
         df, strategy=args.strategy, sl_mult=args.sl_mult, reward_risk=args.rr,
         max_hold_hours=args.max_hold_hours, fee_bps=args.fee_bps,
         session=args.session, rsi_buy=args.rsi_buy, rsi_exit=args.rsi_exit,
-        skip_events=args.skip_events)
+        skip_events=args.skip_events, down_days=args.down_days)
     buy_hold = df["Close"] / df["Close"].iloc[0]
     s = stats(trades, equity, buy_hold)
     print(f"\n=== BACKTEST: {args.symbol}  strategy={args.strategy}  "
@@ -69,7 +73,8 @@ def cmd_backtest(df, args):
 def cmd_live(df, args):
     sig = live_signal(df, strategy=args.strategy, sl_mult=args.sl_mult,
                       reward_risk=args.rr, session=args.session,
-                      rsi_buy=args.rsi_buy, rsi_exit=args.rsi_exit)
+                      rsi_buy=args.rsi_buy, rsi_exit=args.rsi_exit,
+                      down_days=args.down_days)
     print(f"\n=== LIVE SIGNAL: {args.symbol}  strategy={args.strategy}  (bar {sig.as_of}) ===")
     print(f"  price            {sig.price}")
     print(f"  regime           {'above 200 (long ok)' if sig.above_regime else 'below 200 (no longs)'}")
@@ -91,7 +96,7 @@ def cmd_live(df, args):
 def main():
     p = argparse.ArgumentParser(description="Mechanical buy/sell signal tool (no broker, no orders).")
     p.add_argument("mode", choices=["backtest", "live", "both"])
-    p.add_argument("--strategy", default="trend", choices=["trend", "meanrev"])
+    p.add_argument("--strategy", default="trend", choices=["trend", "meanrev", "bb"])
     p.add_argument("--symbol", default=DEFAULT_SYMBOL)
     p.add_argument("--period", default=None)
     p.add_argument("--interval", default=None)
@@ -105,6 +110,8 @@ def main():
     p.add_argument("--skip-events", action=argparse.BooleanOptionalAction, default=None,
                    help="skip entries on high-impact days (FOMC/NFP); on by default for meanrev")
     p.add_argument("--news", action="store_true", help="live: show headlines + event flag")
+    p.add_argument("--down-days", type=int, default=None,
+                   help="meanrev: require N consecutive down closes before entry (default 2)")
     args = resolve(p.parse_args())
 
     df = fetch(args.symbol, args.period, args.interval)

@@ -60,9 +60,10 @@ def backtest(
     rsi_buy: float = 10.0,
     rsi_exit: float = 75.0,
     skip_events: bool = False,
+    down_days: int = 2,
 ) -> tuple[list[Trade], pd.Series]:
     data = build_indicators(df, strategy=strategy, session=session,
-                            rsi_buy=rsi_buy, rsi_exit=rsi_exit)
+                            rsi_buy=rsi_buy, rsi_exit=rsi_exit, down_days=down_days)
     round_turn = 2.0 * fee_bps / 10_000.0
     use_stop = sl_mult > 0
     fixed_target = strategy == "trend"
@@ -123,9 +124,9 @@ def backtest(
 def live_signal(df: pd.DataFrame, strategy: str = "trend",
                 sl_mult: float = ATR_SL_MULT, reward_risk: float = REWARD_RISK,
                 session: str = "us_morning", rsi_buy: float = 10.0,
-                rsi_exit: float = 75.0) -> LiveSignal:
+                rsi_exit: float = 75.0, down_days: int = 2) -> LiveSignal:
     data = build_indicators(df, strategy=strategy, session=session,
-                            rsi_buy=rsi_buy, rsi_exit=rsi_exit)
+                            rsi_buy=rsi_buy, rsi_exit=rsi_exit, down_days=down_days)
     last = data.iloc[-1]
     price = float(last["Close"])
     use_stop = sl_mult > 0

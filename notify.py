@@ -23,10 +23,9 @@ from zoneinfo import ZoneInfo
 
 from data import fetch
 from engine import live_signal
-from news import news_block
+from news import fetch_headlines, high_impact_events
 
 ET = ZoneInfo("America/New_York")
-AST = ZoneInfo("Asia/Riyadh")   # user is in Saudi Arabia (UTC+3, no DST)
 def _load_symbols() -> list[str]:
     """watchlist.txt (one symbol per line) wins; else SYMBOLS env; else SPY.
     The repo file lets us change the watchlist without touching the workflow."""
@@ -45,7 +44,10 @@ STRATEGY = os.environ.get("STRATEGY", "meanrev")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
 NTFY_SERVER = os.environ.get("NTFY_SERVER", "https://ntfy.sh")
 
-WINDOW = {"meanrev": ("12y", "1d"), "trend": ("730d", "1h")}
+WINDOW = {"meanrev": ("12y", "1d"), "bb": ("12y", "1d"), "trend": ("730d", "1h")}
+EMOJI = {"BUY": "\U0001F7E2", "SELL/EXIT": "\U0001F534", "HOLD": "⚪"}
+# ntfy renders these tag names as emoji icons. ASCII-safe for HTTP headers.
+TAGS = {"BUY": "green_circle", "SELL/EXIT": "red_circle", "HOLD": "white_circle"}
 
 
 def near_us_close() -> bool:
@@ -56,7 +58,7 @@ def near_us_close() -> bool:
     return now.weekday() < 5 and (15 * 60 + 25) <= minutes <= (16 * 60 + 5)
 
 
-def push(title: str, body: str) -> None:
+def push(title: str, body: str, tags: str = "chart_with_upwards_trend") -> None:
     if not NTFY_TOPIC:
         print(f"[dry-run: no NTFY_TOPIC] would push:\n  {title}\n{body}")
         return
@@ -64,7 +66,7 @@ def push(title: str, body: str) -> None:
         f"{NTFY_SERVER}/{NTFY_TOPIC}",
         data=body.encode("utf-8"),
         method="POST",
-        headers={"Title": title, "Priority": "high", "Tags": "chart_with_upwards_trend"},
+        headers={"Title": title, "Priority": "high", "Tags": tags},
     )
     with urllib.request.urlopen(req, timeout=15) as resp:
         print(f"pushed ({resp.status}) to topic {NTFY_TOPIC}")
@@ -78,33 +80,37 @@ def main() -> None:
         return
 
     period, interval = WINDOW.get(STRATEGY, WINDOW["meanrev"])
-    lines, actionable = [], False
-    for sym in SYMBOLS:
-        sig = live_signal(fetch(sym, period, interval), strategy=STRATEGY)
-        flag = "" if sig.action == "HOLD" else "   <<< ACT"
-        line = f"{sym}: {sig.action} @ {sig.price} (rsi {sig.rsi})"
-        if sig.suggested_stop is not None:
-            line += f"  stop {sig.suggested_stop}"
-        lines.append(line + flag)
-        actionable = actionable or sig.action != "HOLD"
+    sigs = [(sym, live_signal(fetch(sym, period, interval), strategy=STRATEGY))
+            for sym in SYMBOLS]
+    actionable = any(s.action != "HOLD" for _, s in sigs)
+    events = high_impact_events(datetime.now(ET).date())
 
-    now_ast = datetime.now(AST).strftime("%a %d %b %H:%M AST")
-    footer = ("\n" + now_ast +
-              "\nUS close 16:00 ET = 23:00 AST (summer) / 00:00 (winter)."
-              "\nPrefer daytime? Act at next US open ~16:30/17:30 AST, same signal."
-              "\nRules-based, not advice. You decide. Paper first.")
-
+    # Short, scannable body: one line per symbol, optional event flag + 1 headline.
+    lines = []
+    for sym, s in sigs:
+        line = f"{EMOJI.get(s.action, '')} {sym} {s.action}  ${s.price}"
+        if s.suggested_stop is not None:
+            line += f"  · stop {s.suggested_stop}"
+        lines.append(line)
+    if events:
+        lines.append("⚠️ " + events[0] + " — expect whipsaw")
+    heads = fetch_headlines(SYMBOLS, limit=1)
+    if heads:
+        lines.append("\U0001F4F0 " + heads[0])
+    lines.append("not advice · paper only")
     body = "\n".join(lines)
-    nb = news_block(SYMBOLS, datetime.now(ET).date())  # fresh news + event flag each run
-    if nb:
-        body += "\n\n" + nb
-    body += footer
+
+    if len(sigs) == 1:
+        sym, s = sigs[0]
+        title = f"{sym} {s.action}"               # plain text (HTTP header = latin-1)
+        tags = TAGS.get(s.action, "chart_with_upwards_trend")
+    else:
+        title = "Morning brief" if brief else "Signals"
+        tags = "chart_with_upwards_trend"
 
     # Push on an actionable signal, on a brief, OR when a high-impact event lands.
-    has_event = "HIGH-IMPACT TODAY" in nb
-    if actionable or brief or has_event:
-        title = "Morning brief" if brief else "Trade signal"
-        push(f"{title} ({STRATEGY})", body)
+    if actionable or brief or events:
+        push(title, body, tags)
     else:
         print("All HOLD — no push.\n" + body)
 

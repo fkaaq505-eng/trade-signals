@@ -39,6 +39,11 @@ MR_RSI_PERIOD = 2
 MR_RSI_BUY = 10.0      # buy when RSI(2) below this (Connors uses 5–10)
 MR_RSI_EXIT = 75.0     # exit when RSI(2) above this (sweep-tuned on SPY: 75 > 65)
 MR_TREND_SMA = 200
+MR_DOWN_DAYS = 2       # require N consecutive down closes before entry (sweep: 2 beats 0/3)
+
+# --- "bb" Bollinger-band mean reversion defaults -----------------------------
+BB_PERIOD = 20
+BB_STD = 2.0
 
 
 def ema(series: pd.Series, period: int) -> pd.Series:
@@ -100,8 +105,8 @@ def build_trend(df: pd.DataFrame, session: str = "us_morning") -> pd.DataFrame:
 
 
 def build_meanrev(df: pd.DataFrame, rsi_buy: float = MR_RSI_BUY,
-                  rsi_exit: float = MR_RSI_EXIT,
-                  trend: int = MR_TREND_SMA) -> pd.DataFrame:
+                  rsi_exit: float = MR_RSI_EXIT, trend: int = MR_TREND_SMA,
+                  down_days: int = MR_DOWN_DAYS) -> pd.DataFrame:
     out = df.copy()
     rsi2 = rsi(out["Close"], MR_RSI_PERIOD)
     sma_trend = sma(out["Close"], trend)
@@ -111,13 +116,35 @@ def build_meanrev(df: pd.DataFrame, rsi_buy: float = MR_RSI_BUY,
 
     uptrend = out["Close"] > sma_trend
     raw_buy = uptrend & (rsi2 < rsi_buy)
+    if down_days > 0:  # require N consecutive down closes before buying the dip
+        down = out["Close"] < out["Close"].shift(1)
+        raw_buy = raw_buy & (down.rolling(down_days).sum() == down_days)
     raw_sell = rsi2 > rsi_exit
     return _finalize(out, raw_buy, raw_sell, rsi2, uptrend, uptrend)
 
 
+def build_bbands(df: pd.DataFrame, trend: int = MR_TREND_SMA) -> pd.DataFrame:
+    """Bollinger mean reversion: above 200SMA, buy below lower band, exit at mid."""
+    out = df.copy()
+    mid = sma(out["Close"], BB_PERIOD)
+    sd = out["Close"].rolling(BB_PERIOD).std(ddof=0)
+    lower, upper = mid - BB_STD * sd, mid + BB_STD * sd
+    out["atr"] = atr(out, ATR_PERIOD)
+    sma_trend = sma(out["Close"], trend)
+    pct_b = ((out["Close"] - lower) / (upper - lower)).fillna(0.5) * 100.0
+
+    uptrend = out["Close"] > sma_trend
+    raw_buy = uptrend & (out["Close"] < lower)
+    raw_sell = out["Close"] > mid
+    return _finalize(out, raw_buy, raw_sell, pct_b, uptrend, uptrend)
+
+
 def build_indicators(df: pd.DataFrame, strategy: str = "trend",
                      session: str = "us_morning", rsi_buy: float = MR_RSI_BUY,
-                     rsi_exit: float = MR_RSI_EXIT) -> pd.DataFrame:
+                     rsi_exit: float = MR_RSI_EXIT,
+                     down_days: int = MR_DOWN_DAYS) -> pd.DataFrame:
     if strategy == "meanrev":
-        return build_meanrev(df, rsi_buy=rsi_buy, rsi_exit=rsi_exit)
+        return build_meanrev(df, rsi_buy=rsi_buy, rsi_exit=rsi_exit, down_days=down_days)
+    if strategy == "bb":
+        return build_bbands(df)
     return build_trend(df, session=session)

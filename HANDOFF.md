@@ -19,10 +19,14 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 ## Current state (all done + verified)
 - **Strategy picked:** Connors RSI(2) mean reversion (`--strategy meanrev`), daily.
 - **Instrument picked:** SPY only (higher win rate + lower drawdown than QQQ).
-- **Tuned config (baked as defaults):** rsi_buy=10, rsi_exit=75, no hard stop,
-  event filter ON (skip FOMC/NFP days). Found via `sweep.py`.
-- **Backtest (12y, after fees):** 79.1% win, profit factor 2.56, net +77.5%,
-  max drawdown −10.5%, 91 trades.
+- **Tuned config (baked as defaults):** rsi_buy=10, rsi_exit=75, **down_days=2**
+  (must fall 2 days before buying the dip), no hard stop, event filter ON. Found
+  via `sweep.py` + `compare.py`.
+- **Backtest (12y SPY, after fees):** 82.4% win, profit factor 3.41, net +92.2%,
+  max drawdown −6.8%, 85 trades. (down_days=2 beat plain RSI2 on every metric.)
+- Other strategies tested + rejected: Bollinger reversion (65.8% win), RSI2<5,
+  3-down-days. `compare.py` re-runs the bake-off; only adopt a new one if it wins
+  on win-rate AND net AND drawdown.
 - **News-aware:** Yahoo RSS headlines (keyless) + FOMC(2026)/NFP event flags in
   every push. Optional `FINNHUB_KEY` secret adds CPI etc.
 - **Notifier:** `notify.py` → ntfy push. Watchlist via `watchlist.txt` (= SPY).
@@ -47,10 +51,11 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 - Optional: free Finnhub key → `gh secret set FINNHUB_KEY -b"KEY" --repo fkaaq505-eng/trade-signals`.
 
 ## Files
-`cli.py` (entry) · `strategy.py` (indicators/signals) · `engine.py` (backtest+live)
-· `sessions.py` (intraday session filter) · `news.py` (headlines+events) ·
-`notify.py` (ntfy push) · `sweep.py` (param search) · `data.py` (Yahoo fetch) ·
-`watchlist.txt` · `README.md` · `NOTIFY.md` (phone setup).
+`cli.py` (entry) · `strategy.py` (indicators/signals: trend/meanrev/bb) ·
+`engine.py` (backtest+live) · `sessions.py` (intraday session filter) ·
+`news.py` (headlines+events) · `notify.py` (ntfy push, short message) ·
+`sweep.py` (param search) · `compare.py` (strategy bake-off) · `data.py`
+(Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Sensible next steps
 1. Forward-test on paper for months; log signals vs outcomes.
