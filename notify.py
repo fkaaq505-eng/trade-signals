@@ -138,5 +138,28 @@ def main() -> None:
         print("All HOLD — no push.\n" + body)
 
 
+def _alert_failure(exc: BaseException) -> None:
+    """Best-effort phone alert when the job itself breaks, so silence is never
+    mistaken for 'all HOLD'. If the failure is the network, this push may also
+    fail — nothing we can do, but every non-network failure still reaches you."""
+    detail = f"{type(exc).__name__}: {exc}"[:300]
+    try:
+        push("⚠️ trade-signals FAILED",
+             f"The signal job errored — you may be flying blind.\n{detail}\n"
+             f"Check the GitHub Actions logs.", tags="warning")
+    except Exception as push_exc:   # noqa: BLE001 - last-resort, must not raise
+        print(f"failure-alert push also failed: {push_exc}")
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit as exc:
+        if exc.code not in (0, None):   # real failure (e.g. data.fetch gave up)
+            _alert_failure(exc)
+        raise
+    except Exception as exc:            # noqa: BLE001 - top-level guard for a cron
+        import traceback
+        traceback.print_exc()
+        _alert_failure(exc)
+        sys.exit(1)

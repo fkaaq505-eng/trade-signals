@@ -65,6 +65,9 @@ def backtest(
     add_rsi: float = 5.0,
     base_frac: float = 0.5,
     add_frac: float = 0.5,
+    vix: pd.Series | None = None,
+    vix_min: float = 0.0,
+    vix_max: float = inf,
 ) -> tuple[list[Trade], pd.Series]:
     # No leverage (paper-honest): deployed capital can never exceed 1.0.
     if scale_in and base_frac + add_frac > 1.0 + 1e-9:
@@ -77,6 +80,11 @@ def backtest(
 
     data = build_indicators(df, strategy=strategy, session=session,
                             rsi_buy=rsi_buy, rsi_exit=rsi_exit, down_days=down_days)
+    # Optional VIX-regime gate: only take entries while vix_min <= VIX <= vix_max.
+    # Aligned to the price calendar; gate is off unless a vix series is passed.
+    use_vix = vix is not None
+    if use_vix:
+        data = data.assign(vix=vix.reindex(data.index).ffill())
     round_turn = 2.0 * fee_bps / 10_000.0
     use_stop = sl_mult > 0
     fixed_target = strategy == "trend"
@@ -133,6 +141,8 @@ def backtest(
             # Event-risk filter: skip entries on high-impact macro days (no
             # network in backtest -> finnhub_key="" so only FOMC/NFP rules apply).
             blocked = skip_events and high_impact_events(ts.date(), finnhub_key="")
+            if use_vix and not (vix_min <= float(row["vix"]) <= vix_max):
+                blocked = True   # VIX regime out of band -> stand aside
             if not blocked:
                 entry = float(row["Close"])
                 stop = entry - sl_mult * float(row["atr"]) if use_stop else -inf

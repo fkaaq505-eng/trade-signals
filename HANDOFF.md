@@ -54,8 +54,9 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `cli.py` (entry) · `strategy.py` (indicators/signals: trend/meanrev/bb) ·
 `engine.py` (backtest+live) · `sessions.py` (intraday session filter) ·
 `news.py` (headlines+events) · `notify.py` (ntfy push, short message) ·
-`sweep.py` (param search) · `compare.py` (strategy bake-off) · `data.py`
-(Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
+`sweep.py` (param search) · `compare.py` (strategy bake-off) ·
+`walkforward.py` (out-of-sample validation) · `vixtest.py` (VIX-regime experiment) ·
+`data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Next steps (in order)
 1. **Walk-forward validation — DONE (`walkforward.py`).** Verdict: **not overfit.**
@@ -71,8 +72,19 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
    current all-in = 82.4% / 92.2% / −6.8%. Beats on win + DD + PF but **net craters
    92%→52%** (idle dry powder). Fails the win-AND-net-AND-DD gate → not adopted.
    Mechanism kept as opt-in for future (e.g. if cash earns yield).
-3. Optional: VIX-regime filter, weekly performance push, short side.
-4. Re-tune yearly; update `news.FOMC_DAYS` with next year's Fed calendar.
+3. **VIX-regime filter — DONE, REJECTED as default (`vixtest.py`).** No VIX band
+   beats current on win AND net AND DD — the 200SMA already blocks crash-buying.
+   Engine supports it opt-in (`vix`/`vix_min`/`vix_max`, default off). NOTE one
+   honest lever: `VIX<25` keeps the same 82.4% win and nearly HALVES max drawdown
+   (−6.8%→−3.9%), only giving up net (92→69%). Not the default (fails the net
+   gate) but a valid choice if you prioritise smoothness; not yet wired to live.
+4. **Reliability — DONE.** `notify.py` now pushes a loud "⚠️ trade-signals FAILED"
+   alert on any job exception (else a broken cron is silent and looks like HOLD).
+   The daily `--brief` morning push already doubles as a liveness heartbeat.
+5. Optional/declined: short side (advised against — meanrev sits in cash below
+   200SMA, which is WHY drawdown is low; shorting kills that edge). Weekly perf
+   push = cosmetic (no positions tracked).
+6. Re-tune yearly; `news.FOMC_DAYS` confirmed current for all of 2026.
 
 ---
 
