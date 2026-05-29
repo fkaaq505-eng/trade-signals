@@ -56,6 +56,7 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `news.py` (headlines+events) · `notify.py` (ntfy push, short message) ·
 `sweep.py` (param search) · `compare.py` (strategy bake-off) ·
 `walkforward.py` (out-of-sample validation) · `vixtest.py` (VIX-regime experiment) ·
+`funded.py` (prop-firm MAE/drawdown reality check) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Next steps (in order)
@@ -85,6 +86,14 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
    200SMA, which is WHY drawdown is low; shorting kills that edge). Weekly perf
    push = cosmetic (no positions tracked).
 6. Re-tune yearly; `news.FOMC_DAYS` confirmed current for all of 2026.
+7. **Funded/prop accounts — REALITY CHECK done (`funded.py`).** Added per-trade MAE
+   (max adverse excursion) to the engine/`Trade`. Honest finding: worst trade went
+   −11.4% underwater intraday (the close-to-close −6.8% DD hid this); holds up to 12
+   days. NOT prop-safe as-is — fails intraday/EOD-flat futures firms outright, and
+   one bad trade breaches a 4–5% trailing/daily limit at full size (survivable only
+   ~17% sized). Edge = no stop + sit in cash = opposite of prop rules. Best fit
+   stays a personal cash/paper account. A real funded variant would be a SEPARATE
+   intraday + hard-stop + EOD-flat strategy, scoped to one firm's exact limits.
 
 ---
 

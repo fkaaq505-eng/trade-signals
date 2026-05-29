@@ -33,6 +33,8 @@ class Trade:
     r_multiple: float
     pnl_pct: float
     hold_hours: float
+    mae_pct: float       # max adverse excursion: deepest underwater vs entry (<=0)
+    mfe_pct: float       # max favorable excursion: highest unrealized vs entry (>=0)
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,7 @@ def backtest(
     stop = target = 0.0
     entry_ts = None
     tranches: list[tuple[float, float]] = []   # [(fill_price, capital_fraction)]
+    pos_low = pos_high = entry_px = 0.0         # for MAE/MFE excursion tracking
 
     def close_trade(exit_price, exit_ts, reason):
         nonlocal equity, in_pos, tranches
@@ -109,18 +112,25 @@ def backtest(
         risk = avg_entry - stop if use_stop else 0.0
         r = (exit_price - avg_entry) / risk if risk > 0 else 0.0
         pnl_pct = 100.0 * (realized / invested - 1.0)   # return on invested capital
+        # Excursions vs the INITIAL entry price (what a funded-account drawdown
+        # limit actually watches — how deep underwater the trade went intraday).
+        mae = 100.0 * (pos_low / entry_px - 1.0) if entry_px else 0.0
+        mfe = 100.0 * (pos_high / entry_px - 1.0) if entry_px else 0.0
         trades.append(Trade(
             str(entry_ts), str(exit_ts), round(avg_entry, 2), round(exit_price, 2),
             round(stop, 2) if use_stop else None,
             round(target, 2) if fixed_target else None,
             reason, round(r, 2), round(pnl_pct, 2),
             round((exit_ts - entry_ts).total_seconds() / 3600.0, 1),
+            round(mae, 2), round(mfe, 2),
         ))
         in_pos = False
         tranches = []
 
     for ts, row in data.iterrows():
         if in_pos:
+            pos_low = min(pos_low, float(row["Low"]))
+            pos_high = max(pos_high, float(row["High"]))
             elapsed = (ts - entry_ts).total_seconds() / 3600.0
             if use_stop and row["Low"] <= stop:
                 close_trade(stop, ts, "stop")
@@ -148,6 +158,8 @@ def backtest(
                 stop = entry - sl_mult * float(row["atr"]) if use_stop else -inf
                 target = entry + reward_risk * (entry - stop) if fixed_target else inf
                 entry_ts = ts
+                entry_px = entry
+                pos_low = pos_high = entry      # track excursions from entry close
                 tranches = [(entry, base_frac if scale_in else 1.0)]
                 in_pos = True
 
