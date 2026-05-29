@@ -48,6 +48,28 @@ WINDOW = {"meanrev": ("12y", "1d"), "bb": ("12y", "1d"), "trend": ("730d", "1h")
 EMOJI = {"BUY": "\U0001F7E2", "SELL/EXIT": "\U0001F534", "HOLD": "⚪"}
 # ntfy renders these tag names as emoji icons. ASCII-safe for HTTP headers.
 TAGS = {"BUY": "green_circle", "SELL/EXIT": "red_circle", "HOLD": "white_circle"}
+# Plain-English action so "SELL/EXIT" can't be misread as "go short".
+PHRASE = {"BUY": "BUY", "SELL/EXIT": "EXIT (close long)", "HOLD": "HOLD"}
+# The tradeable ETF prices at ~1/10 of its index, which confuses ("SPY 756" vs
+# "S&P 500 7,565"). Show the real index level alongside so they line up.
+INDEX_FOR = {
+    "SPY": ("^GSPC", "S&P 500"), "QQQ": ("^NDX", "Nasdaq-100"),
+    "DIA": ("^DJI", "Dow"), "IWM": ("^RUT", "Russell 2000"),
+}
+
+
+def index_context(sym: str) -> str:
+    """' · S&P 500 ≈ 7,565' for an ETF whose underlying index we know, else ''.
+    Best-effort: a failed fetch must never block the alert."""
+    mapping = INDEX_FOR.get(sym.upper())
+    if not mapping:
+        return ""
+    ticker, label = mapping
+    try:
+        level = float(fetch(ticker, "5d", "1d")["Close"].iloc[-1])
+        return f"  ·  {label} ≈ {level:,.0f}"
+    except Exception:
+        return "  ·  ETF priced at ~1/10 of its index"
 
 
 def near_us_close() -> bool:
@@ -88,7 +110,8 @@ def main() -> None:
     # Short, scannable body: one line per symbol, optional event flag + 1 headline.
     lines = []
     for sym, s in sigs:
-        line = f"{EMOJI.get(s.action, '')} {sym} {s.action}  ${s.price}"
+        line = (f"{EMOJI.get(s.action, '')} {PHRASE.get(s.action, s.action)} — "
+                f"{sym} ${s.price}{index_context(sym)}")
         if s.suggested_stop is not None:
             line += f"  · stop {s.suggested_stop}"
         lines.append(line)
@@ -102,7 +125,7 @@ def main() -> None:
 
     if len(sigs) == 1:
         sym, s = sigs[0]
-        title = f"{sym} {s.action}"               # plain text (HTTP header = latin-1)
+        title = f"{sym} {PHRASE.get(s.action, s.action)}"   # plain text (HTTP header = latin-1)
         tags = TAGS.get(s.action, "chart_with_upwards_trend")
     else:
         title = "Morning brief" if brief else "Signals"
