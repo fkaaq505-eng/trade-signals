@@ -1,11 +1,20 @@
 # Phone notifications when you're away (no laptop needed)
 
-Goal: get a push on your phone near the US close when the strategy flags
-**BUY** or **SELL/EXIT** — even with your laptop shut. The check runs on
-GitHub's free servers (GitHub Actions cron), not your machine.
+Goal: get a push on your phone for SPY/QQQ signals — even with your laptop shut.
+The check runs on GitHub's free servers (GitHub Actions cron), not your machine.
 
-Stack: **ntfy.sh** (free push, no account) + **GitHub Actions** (free cron).
-It only notifies. It never places a trade.
+Stack: **ntfy.sh** (free push, no account) + **GitHub Actions** (free cron) +
+Yahoo data (free). **Total cost: $0.** It only notifies — never places a trade.
+
+### Two pushes a day, set for Saudi time (AST = UTC+3)
+
+| push | when (AST) | what |
+|------|-----------|------|
+| **Close alert** | ~23:00 (summer) / 00:00 (winter) | only if a signal = BUY or SELL/EXIT — fires at the US close |
+| **Morning brief** | **08:00** | always — a status recap so you can act at the next US open (~16:30/17:30 AST), a civil hour |
+
+Connors RSI(2) decides at the US *close*. If 23:00/midnight is too late, just act
+on the **morning brief** at the next US open — same signal, daytime.
 
 ## 1. Set up the phone push (2 min)
 
@@ -44,9 +53,16 @@ GitHub repo → **Settings → Secrets and variables → Actions → New reposit
 
 ## 5. Done
 
-The workflow [`.github/workflows/signal.yml`](.github/workflows/signal.yml) runs
-weekdays near the US close. When SPY or QQQ flags BUY or SELL/EXIT, your phone
-buzzes. Run it manually any time from the repo's **Actions** tab → *Run workflow*.
+The workflow [`.github/workflows/signal.yml`](.github/workflows/signal.yml) now
+runs on its own: a **close alert** (when a signal fires) and an **08:00 AST
+morning brief** (always). Test it now from the repo's **Actions** tab →
+*trade-signal-notify* → *Run workflow* — that sends a brief to your phone
+immediately.
+
+> **Keeping it free:** GitHub Actions is free for public repos (unlimited) and
+> ~2000 min/month on private — this uses ~60. **Note:** GitHub auto-pauses
+> scheduled workflows after **60 days of no commits** to the repo; push any small
+> change (or hit *Run workflow*) occasionally to keep it alive.
 
 ## Notes / honesty
 
