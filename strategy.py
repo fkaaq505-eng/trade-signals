@@ -37,7 +37,7 @@ REWARD_RISK = 1.5
 # --- "meanrev" (Connors RSI2) defaults --------------------------------------
 MR_RSI_PERIOD = 2
 MR_RSI_BUY = 10.0      # buy when RSI(2) below this (Connors uses 5–10)
-MR_RSI_EXIT = 65.0     # exit when RSI(2) above this
+MR_RSI_EXIT = 75.0     # exit when RSI(2) above this (sweep-tuned on SPY: 75 > 65)
 MR_TREND_SMA = 200
 
 

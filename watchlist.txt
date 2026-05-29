@@ -1,0 +1,3 @@
+# Symbols the notifier watches (one per line). Edit + push to change.
+# Picked S&P 500 only: highest win rate + lowest drawdown of the indices.
+SPY

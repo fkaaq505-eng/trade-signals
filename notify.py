@@ -27,7 +27,20 @@ from news import news_block
 
 ET = ZoneInfo("America/New_York")
 AST = ZoneInfo("Asia/Riyadh")   # user is in Saudi Arabia (UTC+3, no DST)
-SYMBOLS = [s.strip() for s in os.environ.get("SYMBOLS", "SPY,QQQ").split(",") if s.strip()]
+def _load_symbols() -> list[str]:
+    """watchlist.txt (one symbol per line) wins; else SYMBOLS env; else SPY.
+    The repo file lets us change the watchlist without touching the workflow."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(here, "watchlist.txt")
+    if os.path.exists(path):
+        with open(path) as f:
+            syms = [ln.strip().upper() for ln in f if ln.strip() and not ln.startswith("#")]
+        if syms:
+            return syms
+    return [s.strip() for s in os.environ.get("SYMBOLS", "SPY").split(",") if s.strip()]
+
+
+SYMBOLS = _load_symbols()
 STRATEGY = os.environ.get("STRATEGY", "meanrev")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
 NTFY_SERVER = os.environ.get("NTFY_SERVER", "https://ntfy.sh")

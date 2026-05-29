@@ -42,6 +42,8 @@ def resolve(args):
     args.session = args.session or d["session"]
     args.sl_mult = d["sl_mult"] if args.sl_mult is None else args.sl_mult
     args.max_hold_hours = d["max_hold"] if args.max_hold_hours is None else args.max_hold_hours
+    if args.skip_events is None:
+        args.skip_events = args.strategy == "meanrev"   # event filter on by default for meanrev
     return args
 
 
@@ -99,9 +101,9 @@ def main():
     p.add_argument("--rr", type=float, default=1.5)
     p.add_argument("--fee-bps", type=float, default=1.0)
     p.add_argument("--rsi-buy", type=float, default=10.0, help="meanrev: buy when RSI(2) below this")
-    p.add_argument("--rsi-exit", type=float, default=65.0, help="meanrev: exit when RSI(2) above this")
-    p.add_argument("--skip-events", action="store_true",
-                   help="backtest: skip entries on high-impact days (FOMC/NFP)")
+    p.add_argument("--rsi-exit", type=float, default=75.0, help="meanrev: exit when RSI(2) above this")
+    p.add_argument("--skip-events", action=argparse.BooleanOptionalAction, default=None,
+                   help="skip entries on high-impact days (FOMC/NFP); on by default for meanrev")
     p.add_argument("--news", action="store_true", help="live: show headlines + event flag")
     args = resolve(p.parse_args())
 

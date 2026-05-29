@@ -58,7 +58,7 @@ def backtest(
     fee_bps: float = 1.0,
     session: str = "us_morning",
     rsi_buy: float = 10.0,
-    rsi_exit: float = 65.0,
+    rsi_exit: float = 75.0,
     skip_events: bool = False,
 ) -> tuple[list[Trade], pd.Series]:
     data = build_indicators(df, strategy=strategy, session=session,
@@ -123,7 +123,7 @@ def backtest(
 def live_signal(df: pd.DataFrame, strategy: str = "trend",
                 sl_mult: float = ATR_SL_MULT, reward_risk: float = REWARD_RISK,
                 session: str = "us_morning", rsi_buy: float = 10.0,
-                rsi_exit: float = 65.0) -> LiveSignal:
+                rsi_exit: float = 75.0) -> LiveSignal:
     data = build_indicators(df, strategy=strategy, session=session,
                             rsi_buy=rsi_buy, rsi_exit=rsi_exit)
     last = data.iloc[-1]
