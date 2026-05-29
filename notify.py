@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 from data import fetch
 from engine import live_signal
 from news import fetch_headlines, high_impact_events
+from strategy import ATR_SL_MULT
 
 ET = ZoneInfo("America/New_York")
 def _load_symbols() -> list[str]:
@@ -41,6 +42,10 @@ def _load_symbols() -> list[str]:
 
 SYMBOLS = _load_symbols()
 STRATEGY = os.environ.get("STRATEGY", "meanrev")
+# Mean reversion is validated with NO stop (a stop wrecks its win rate); only the
+# intraday "trend" strategy uses an ATR stop. Match the backtest so the push never
+# suggests a stop the strategy doesn't actually use.
+SL_MULT = ATR_SL_MULT if STRATEGY == "trend" else 0.0
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
 NTFY_SERVER = os.environ.get("NTFY_SERVER", "https://ntfy.sh")
 
@@ -102,7 +107,8 @@ def main() -> None:
         return
 
     period, interval = WINDOW.get(STRATEGY, WINDOW["meanrev"])
-    sigs = [(sym, live_signal(fetch(sym, period, interval), strategy=STRATEGY))
+    sigs = [(sym, live_signal(fetch(sym, period, interval),
+                              strategy=STRATEGY, sl_mult=SL_MULT))
             for sym in SYMBOLS]
     actionable = any(s.action != "HOLD" for _, s in sigs)
     events = high_impact_events(datetime.now(ET).date())
@@ -113,8 +119,14 @@ def main() -> None:
         line = (f"{EMOJI.get(s.action, '')} {PHRASE.get(s.action, s.action)} — "
                 f"{sym} ${s.price}{index_context(sym)}")
         if s.suggested_stop is not None:
-            line += f"  · stop {s.suggested_stop}"
+            line += f"  · stop {s.suggested_stop}"   # only the trend strategy sets one
         lines.append(line)
+        # How to act in a paper account (TradingView etc.): mean reversion has no
+        # price SL/TP — exit is the next SELL signal or the time stop.
+        if s.action == "BUY" and STRATEGY != "trend":
+            lines.append("   → buy · no SL/TP · exit on my SELL alert (RSI2>75) or ~10 trading days")
+        elif s.action == "SELL/EXIT":
+            lines.append("   → close the long now (take-profit, not a short)")
     if events:
         lines.append("⚠️ " + events[0] + " — expect whipsaw")
     heads = fetch_headlines(SYMBOLS, limit=1)
