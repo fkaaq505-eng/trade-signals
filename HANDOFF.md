@@ -58,6 +58,7 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `walkforward.py` (out-of-sample validation) · `vixtest.py` (VIX-regime experiment) ·
 `funded.py` (prop MAE/drawdown reality check) · `fundeval.py` (eval pass/fail sim) ·
 `funded_intraday.py` (intraday hard-stop + EOD-flat structure) ·
+`data_csv.py` (load OHLCV from a CSV — TradingView export / Alpaca / Polygon) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Next steps (in order)
@@ -104,6 +105,11 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
    CANNOT be validated on free Yahoo data (intraday history capped). Real funded
    work needs paid multi-year intraday data + forward paper testing. The validated
    DAILY strategy is deliberately KEPT (not deleted) as the only proven asset.
+   `data_csv.py` lets `funded_intraday.py <file.csv>` run on real deep intraday data
+   (TradingView "Export chart data" CSV, or a free Alpaca/Polygon download) — Yahoo
+   has no usable intraday history, and TradingView has no official data API (only
+   ToS-violating scrapers that are also bar-limited). Manual CSV export is the clean
+   path. Next real step: pull multi-year 5m/1m bars, re-run, then forward-test.
 
 ---
 

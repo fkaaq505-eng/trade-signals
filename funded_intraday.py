@@ -12,25 +12,35 @@ SHAPE a prop evaluation needs — bounded per-trade loss, no overnight gap.
   then forward paper-test. The value here is the funded-compatible plumbing (hard
   stop + EOD-flat + sizing), not a promise that it makes money.
 
-    python funded_intraday.py            # SPY 1h, 2y
+    python funded_intraday.py                  # SPY 1h from Yahoo (~3y, 1 regime)
+    python funded_intraday.py SPY_5m.csv       # your own deep intraday CSV (preferred)
 """
 
 from __future__ import annotations
 
+import sys
+
 from data import fetch
+from data_csv import load_csv
 from engine import backtest, stats
 
 STOPS = (0.5, 1.0, 1.5)   # ATR multiples for the hard stop
 
 
 def main() -> None:
-    df = fetch("SPY", "730d", "1h")
+    src = sys.argv[1] if len(sys.argv) > 1 else None
+    if src and src.lower().endswith(".csv"):
+        df = load_csv(src)
+        warned = f"loaded {len(df)} bars from {src}"
+    else:
+        df = fetch("SPY", "730d", "1h")
+        warned = "*** ~2-3y / ONE regime — illustrative structure only, NOT a validated edge ***"
     buy_hold = df["Close"] / df["Close"].iloc[0]
     span_days = (df.index[-1] - df.index[0]).days
 
-    print(f"\n=== FUNDED INTRADAY (SPY 1h, ~{span_days}d ≈ {span_days/365:.1f}y, "
-          f"hard stop + EOD-flat) ===")
-    print("*** ~2y / ONE regime — illustrative structure only, NOT a validated edge ***")
+    print(f"\n=== FUNDED INTRADAY ({src or 'SPY 1h Yahoo'}, ~{span_days}d "
+          f"≈ {span_days/365:.1f}y, hard stop + EOD-flat) ===")
+    print(warned)
     print(f"buy_hold over window: {100.0*(buy_hold.iloc[-1]-1):.1f}%\n")
     print(f"{'stop(xATR)':>10}{'trades':>8}{'win%':>7}{'net%':>8}{'maxDD%':>8}"
           f"{'worstMAE%':>10}{'avgHold_h':>10}")
