@@ -57,10 +57,15 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `sweep.py` (param search) · `compare.py` (strategy bake-off) · `data.py`
 (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
-## Sensible next steps
-1. Forward-test on paper for months; log signals vs outcomes.
-2. Optional: add short side, weekly performance push, or more symbols (edit watchlist.txt).
-3. Re-tune yearly; update `news.FOMC_DAYS` with the next year's Fed calendar.
+## Next steps (in order)
+1. **Walk-forward validation (priority)** — confirm 82% isn't curve-fit. Train on
+   older years, test on held-out recent years; report OUT-OF-SAMPLE win/net/DD.
+   Build as `walkforward.py`. Be honest if it doesn't hold up.
+2. **Scale-in test** — Connors-style: add at deeper oversold (e.g. RSI2<5 while
+   already long); needs partial-position support in `engine.py`. Adopt only if it
+   beats current on win AND net AND drawdown (`compare.py` discipline).
+3. Optional: VIX-regime filter, weekly performance push, short side.
+4. Re-tune yearly; update `news.FOMC_DAYS` with next year's Fed calendar.
 
 ---
 
