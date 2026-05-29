@@ -56,7 +56,9 @@ def cmd_backtest(df, args):
         df, strategy=args.strategy, sl_mult=args.sl_mult, reward_risk=args.rr,
         max_hold_hours=args.max_hold_hours, fee_bps=args.fee_bps,
         session=args.session, rsi_buy=args.rsi_buy, rsi_exit=args.rsi_exit,
-        skip_events=args.skip_events, down_days=args.down_days)
+        skip_events=args.skip_events, down_days=args.down_days,
+        scale_in=args.scale_in, add_rsi=args.add_rsi,
+        base_frac=args.base_frac, add_frac=args.add_frac)
     buy_hold = df["Close"] / df["Close"].iloc[0]
     s = stats(trades, equity, buy_hold)
     print(f"\n=== BACKTEST: {args.symbol}  strategy={args.strategy}  "
@@ -112,6 +114,14 @@ def main():
     p.add_argument("--news", action="store_true", help="live: show headlines + event flag")
     p.add_argument("--down-days", type=int, default=None,
                    help="meanrev: require N consecutive down closes before entry (default 2)")
+    p.add_argument("--scale-in", action="store_true",
+                   help="meanrev: add a deeper-oversold tranche (Connors scale-in, no leverage)")
+    p.add_argument("--add-rsi", type=float, default=5.0,
+                   help="scale-in: add when RSI(2) below this (default 5)")
+    p.add_argument("--base-frac", type=float, default=0.5,
+                   help="scale-in: capital fraction at first signal (default 0.5)")
+    p.add_argument("--add-frac", type=float, default=0.5,
+                   help="scale-in: capital fraction added on deeper dip (default 0.5)")
     args = resolve(p.parse_args())
 
     df = fetch(args.symbol, args.period, args.interval)

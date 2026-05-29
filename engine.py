@@ -61,7 +61,20 @@ def backtest(
     rsi_exit: float = 75.0,
     skip_events: bool = False,
     down_days: int = 2,
+    scale_in: bool = False,
+    add_rsi: float = 5.0,
+    base_frac: float = 0.5,
+    add_frac: float = 0.5,
 ) -> tuple[list[Trade], pd.Series]:
+    # No leverage (paper-honest): deployed capital can never exceed 1.0.
+    if scale_in and base_frac + add_frac > 1.0 + 1e-9:
+        raise ValueError(
+            f"scale-in base_frac + add_frac = {base_frac + add_frac} > 1.0 "
+            f"(would use leverage; this tool is paper-only, no margin)."
+        )
+    if scale_in and (base_frac <= 0.0 or add_frac <= 0.0):
+        raise ValueError("scale-in fractions must be positive.")
+
     data = build_indicators(df, strategy=strategy, session=session,
                             rsi_buy=rsi_buy, rsi_exit=rsi_exit, down_days=down_days)
     round_turn = 2.0 * fee_bps / 10_000.0
@@ -73,22 +86,30 @@ def backtest(
     equity = 1.0
 
     in_pos = False
-    entry = stop = target = 0.0
+    stop = target = 0.0
     entry_ts = None
+    tranches: list[tuple[float, float]] = []   # [(fill_price, capital_fraction)]
 
     def close_trade(exit_price, exit_ts, reason):
-        nonlocal equity, in_pos
-        risk = entry - stop if use_stop else 0.0
-        r = (exit_price - entry) / risk if risk > 0 else 0.0
-        equity *= (exit_price / entry) * (1.0 - round_turn)
+        nonlocal equity, in_pos, tranches
+        invested = sum(f for _, f in tranches)
+        # Realized value of the deployed fraction; the uninvested (1-invested)
+        # sits in cash and earns nothing. Fees hit only the traded portion.
+        realized = sum(f * (exit_price / p) for p, f in tranches)
+        avg_entry = sum(f * p for p, f in tranches) / invested
+        equity *= (1.0 - invested) + realized * (1.0 - round_turn)
+        risk = avg_entry - stop if use_stop else 0.0
+        r = (exit_price - avg_entry) / risk if risk > 0 else 0.0
+        pnl_pct = 100.0 * (realized / invested - 1.0)   # return on invested capital
         trades.append(Trade(
-            str(entry_ts), str(exit_ts), round(entry, 2), round(exit_price, 2),
+            str(entry_ts), str(exit_ts), round(avg_entry, 2), round(exit_price, 2),
             round(stop, 2) if use_stop else None,
             round(target, 2) if fixed_target else None,
-            reason, round(r, 2), round(100.0 * (exit_price / entry - 1.0), 2),
+            reason, round(r, 2), round(pnl_pct, 2),
             round((exit_ts - entry_ts).total_seconds() / 3600.0, 1),
         ))
         in_pos = False
+        tranches = []
 
     for ts, row in data.iterrows():
         if in_pos:
@@ -101,6 +122,12 @@ def backtest(
                 close_trade(float(row["Close"]), ts, "time")
             elif bool(row["raw_sell"]):
                 close_trade(float(row["Close"]), ts, "signal")
+            elif (scale_in and len(tranches) < 2
+                  and float(row["disp_rsi"]) < add_rsi
+                  and float(row["Close"]) < tranches[-1][0]):
+                # Deeper-oversold add (Connors scale-in): one extra tranche on a
+                # lower close. raw_sell (RSI2>exit) and this are mutually exclusive.
+                tranches.append((float(row["Close"]), add_frac))
 
         if not in_pos and bool(row["raw_buy"]) and row["atr"] > 0:
             # Event-risk filter: skip entries on high-impact macro days (no
@@ -111,6 +138,7 @@ def backtest(
                 stop = entry - sl_mult * float(row["atr"]) if use_stop else -inf
                 target = entry + reward_risk * (entry - stop) if fixed_target else inf
                 entry_ts = ts
+                tranches = [(entry, base_frac if scale_in else 1.0)]
                 in_pos = True
 
         equity_curve.append(equity)

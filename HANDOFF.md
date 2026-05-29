@@ -58,12 +58,19 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Next steps (in order)
-1. **Walk-forward validation (priority)** — confirm 82% isn't curve-fit. Train on
-   older years, test on held-out recent years; report OUT-OF-SAMPLE win/net/DD.
-   Build as `walkforward.py`. Be honest if it doesn't hold up.
-2. **Scale-in test** — Connors-style: add at deeper oversold (e.g. RSI2<5 while
-   already long); needs partial-position support in `engine.py`. Adopt only if it
-   beats current on win AND net AND drawdown (`compare.py` discipline).
+1. **Walk-forward validation — DONE (`walkforward.py`).** Verdict: **not overfit.**
+   True out-of-sample (re-tuned each year on PRIOR data only) = **78.4% win**, vs
+   82.4% in-sample; ~4pt shrink = normal optimism. Mode A (baked params on
+   held-out 2019–2026) = 80.7%. BUT: 2 of 8 OOS years lost money (2019, 2022),
+   and OOS net 53–57% still trails buy-hold 237% over the same window — the real,
+   surviving edge is drawdown (−7/−8% vs holding through 2020/2022). 51–57 OOS
+   trades, so ~±11% CI. Run: `.venv/bin/python walkforward.py`.
+2. **Scale-in test — DONE, REJECTED.** Connors deeper-oversold add implemented as
+   no-leverage fractional tranches in `engine.py` (`--scale-in`, default OFF).
+   Bake-off (`compare.py`): scale-in 50/50 (<5) = 83.5% win / 52.3% net / −6.1% DD;
+   current all-in = 82.4% / 92.2% / −6.8%. Beats on win + DD + PF but **net craters
+   92%→52%** (idle dry powder). Fails the win-AND-net-AND-DD gate → not adopted.
+   Mechanism kept as opt-in for future (e.g. if cash earns yield).
 3. Optional: VIX-regime filter, weekly performance push, short side.
 4. Re-tune yearly; update `news.FOMC_DAYS` with next year's Fed calendar.
 

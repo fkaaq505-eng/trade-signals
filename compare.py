@@ -17,10 +17,13 @@ from engine import backtest, stats
 SYMBOL = sys.argv[1] if len(sys.argv) > 1 else "SPY"
 
 CANDIDATES = [
-    ("meanrev RSI2 (current)", dict(strategy="meanrev", rsi_buy=10, rsi_exit=75)),
-    ("meanrev + 2 down days", dict(strategy="meanrev", rsi_buy=10, rsi_exit=75, down_days=2)),
+    ("meanrev current (all-in)", dict(strategy="meanrev", rsi_buy=10, rsi_exit=75, down_days=2)),
     ("meanrev + 3 down days", dict(strategy="meanrev", rsi_buy=10, rsi_exit=75, down_days=3)),
     ("meanrev RSI2<5 (deeper)", dict(strategy="meanrev", rsi_buy=5, rsi_exit=75)),
+    ("scale-in 50/50 (<5)", dict(strategy="meanrev", rsi_buy=10, rsi_exit=75, down_days=2,
+                                 scale_in=True, add_rsi=5, base_frac=0.5, add_frac=0.5)),
+    ("scale-in 67/33 (<5)", dict(strategy="meanrev", rsi_buy=10, rsi_exit=75, down_days=2,
+                                 scale_in=True, add_rsi=5, base_frac=0.67, add_frac=0.33)),
     ("bollinger reversion", dict(strategy="bb")),
 ]
 
