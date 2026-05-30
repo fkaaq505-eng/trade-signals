@@ -1,13 +1,22 @@
 # Symbols the notifier watches (one per line). Edit + push to change.
-# EDGE-VALIDATED ETF BASKET (screen.py, 12y daily meanrev, win>=72% AND net>0).
-# US equity index + the 3 sector ETFs that kept the Connors-RSI2 edge. ETFs only
-# (no single-stock earnings/blowup risk). ~1-2 signals/week, bursty (cluster in dips).
-# This is the MAX honest frequency — every name is a real edge. Going wider = weaker.
+# EDGE-VALIDATED BASKET, WIDENED (screen.py, 12y daily meanrev, win>=72% AND net>0).
+# 15 US equity ETFs that kept the Connors-RSI2 edge. ETFs only (no single-stock risk).
+# ~2-4 signals/week. NOTE: many are correlated style-tilts (IWF/MTUM/XLK/QQQ all
+# growth-ish; RSP/VTI/SPY all broad) -> you'll sometimes get several BUYs the same day
+# that are really one bet. More NAMES = more alerts, not more independent edges.
+# Dropped XOP (energy, no upward drift, risky) and VUG (duplicate of IWF).
 SPY
 QQQ
 IWM
 MDY
 VTI
+RSP
+IJR
 XLY
 XLI
 XLK
+XLC
+IWF
+IWD
+MTUM
+XRT

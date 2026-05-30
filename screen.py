@@ -13,10 +13,11 @@ from data import fetch
 from engine import backtest, stats
 
 CANDIDATES = [
-    "SPY", "QQQ", "DIA", "IWM", "MDY", "VTI",                      # broad
-    "XLK", "XLF", "XLE", "XLV", "XLY", "XLI", "XLP", "XLU", "XLB",  # sectors
-    "SMH", "IYR", "XBI", "KRE", "ITB",                             # industries
-    "EFA", "EEM", "EWJ", "FXI",                                    # international
+    "SPY", "QQQ", "DIA", "IWM", "MDY", "VTI", "RSP",               # broad / equal-wt
+    "IWF", "IWD", "IJR", "MTUM", "VUG", "VTV",                     # style / size
+    "XLK", "XLF", "XLE", "XLV", "XLY", "XLI", "XLP", "XLU", "XLB", "XLC",  # sectors
+    "SMH", "SOXX", "IGV", "XHB", "XRT", "ITA", "XAR", "IBB", "XBI", "KRE", "XOP", "IYR",  # industries
+    "EFA", "EEM", "EWJ", "FXI", "EWZ",                            # international
 ]
 # Gate: a real, tradeable edge needs a high win rate, positive net, and enough
 # trades to trust it. Tuned to match SPY's profile, not cherry-picked.
