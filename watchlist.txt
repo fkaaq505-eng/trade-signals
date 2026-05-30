@@ -1,4 +1,13 @@
 # Symbols the notifier watches (one per line). Edit + push to change.
-# S&P 500 only (SPY) — the user trades the S&P 500. Highest win rate + lowest
-# drawdown of all the indices. One symbol = short alert.
+# EDGE-VALIDATED ETF BASKET (screen.py, 12y daily meanrev, win>=72% AND net>0):
+# broad US equity + the 3 sector ETFs that kept the Connors-RSI2 edge. ETFs only
+# (no single-stock earnings/blowup risk). ~1-2 signals/week, bursty (cluster in dips).
+# Note: VTI~=SPY and XLK~=QQQ are correlated; drop them if you want less overlap.
 SPY
+QQQ
+IWM
+MDY
+VTI
+XLY
+XLI
+XLK

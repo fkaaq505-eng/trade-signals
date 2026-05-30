@@ -65,6 +65,7 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
 `journal.py` (log YOUR paper trades → real win/expectancy/net-after-fees, any strat) ·
 `autojournal.py` (system auto-logs ORB TP/SL/EOD outcomes → `journal_orb.csv`) ·
 `tjr_bot.py` (TJR "Path to Profitability" model mechanized + OOS-tested, no edge) ·
+`screen.py` (screen ETFs for the meanrev edge → the frequency basket) ·
 `data_csv.py` (load OHLCV CSV) ·
 `alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup) ·
@@ -222,6 +223,20 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
     to walk bars forward. Same verdict as ORB/RSI2/VWAP/ict_sweep. The series' real
     value = discipline/psychology ("flow state"), NOT a codeable edge — measure any
     discretionary attempt with `journal.py`. Transcripts pulled to /tmp (not committed).
+17. **Frequency basket — RE-ENABLED with edge-validated ETFs (`screen.py`, watchlist).**
+    User wanted more-frequent/"daily" action. Held the line: every daily-single-symbol
+    and intraday method LOSES (items 7-16) — frequency is the losing zone. Honest answer
+    = run the SAME validated meanrev edge across MORE equity index/sector ETFs (the edge
+    needs equities' upward drift + index mean reversion; forex/futures/crypto lack it, so
+    it does NOT transfer — futures-intraday already proven to lose). Screened 24 liquid
+    ETFs (12y daily meanrev, baked config); 8 cleared the gate (win>=72% AND net>0 AND
+    >=30 trades): **SPY QQQ IWM MDY VTI XLY XLI XLK**. ETFs (not single stocks) → no
+    earnings gaps / can't go to zero. `watchlist.txt` set to these 8; `notify.py` is
+    already multi-symbol so the existing cron auto-pushes them — NO workflow scope needed
+    (watchlist is a normal file). Frequency ~1-2 signals/week, BURSTY (correlated names
+    cluster in dips) — NOT truly daily; nothing profitable is. Rejected DIA/XLF/XLE/XLV/
+    XLP/financials/intl (win too low or net weak). Caveat: VTI≈SPY and XLK≈QQQ correlated
+    (drop for less overlap); IWM/MDY carry higher drawdown (−13 to −26%) but pass the gate.
 
 ---
 
