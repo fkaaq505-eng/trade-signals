@@ -1,13 +1,7 @@
 # Symbols the notifier watches (one per line). Edit + push to change.
-# EDGE-VALIDATED ETF BASKET (screen.py, 12y daily meanrev, win>=72% AND net>0):
-# broad US equity + the 3 sector ETFs that kept the Connors-RSI2 edge. ETFs only
-# (no single-stock earnings/blowup risk). ~1-2 signals/week, bursty (cluster in dips).
-# Note: VTI~=SPY and XLK~=QQQ are correlated; drop them if you want less overlap.
+# SINGLE PICK: SPY (S&P 500). The user's market, most liquid, lowest-drawdown S&P
+# vehicle, and the validated anchor (82.4% win / +92% net / -6.8% DD, 12y meanrev).
+# VTI screened marginally better but is ~99% correlated + less liquid — not worth it.
+# Trade-off of one symbol: ~7 signals/YEAR (rare). Re-add the basket (screen.py:
+# QQQ IWM MDY VTI XLY XLI XLK) anytime for ~1-2/week.
 SPY
-QQQ
-IWM
-MDY
-VTI
-XLY
-XLI
-XLK
