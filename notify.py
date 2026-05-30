@@ -99,9 +99,34 @@ def push(title: str, body: str, tags: str = "chart_with_upwards_trend") -> None:
         print(f"pushed ({resp.status}) to topic {NTFY_TOPIC}")
 
 
+def push_orb_plan() -> None:
+    """Funded mode: push today's Opening Range Breakout PLAN + risk guardrails.
+    Framed as a disciplined plan, NOT a predicted winner (ORB has no proven edge —
+    see FUNDED.md). Schedule the cron ~30min after the US open so the range exists."""
+    from orb import ACCOUNT, RISK_PCT, backtest_orb
+    _, plan = backtest_orb(fetch("SPY", "60d", "15m"))
+    if not plan or not plan["range"]:
+        print("No ORB plan available yet (range not formed).")
+        return
+    shares = (ACCOUNT * RISK_PCT / 100.0) / plan["range"]
+    lines = [f"📋 SPY ORB plan — {plan['date']}  ·  S&P 500 ETF",
+             f"opening range {plan['or_low']}–{plan['or_high']} (={plan['range']})"]
+    if plan["long_ok"]:
+        lines.append(f"🟢 LONG stop-buy >{plan['or_high']} · stop {plan['or_low']} · tgt {plan['long_target']}")
+    if plan["short_ok"]:
+        lines.append(f"🔴 SHORT stop-sell <{plan['or_low']} · stop {plan['or_high']} · tgt {plan['short_target']}")
+    lines += [f"size 1% risk ≈ {shares:.0f} SPY shares  ·  FLAT by close (no overnight)",
+              "rules: ≤3 trades, stop ALWAYS, don't rush the target",
+              "⚠️ a PLAN not a prediction · ORB has no proven edge · paper/funded · not advice"]
+    push(f"SPY ORB plan {plan['date']}", "\n".join(lines), tags="clipboard")
+
+
 def main() -> None:
     force = "--force" in sys.argv
     brief = "--brief" in sys.argv
+    if STRATEGY == "orb":          # funded mode: daily plan, own cron timing
+        push_orb_plan()
+        return
     if not force and not near_us_close():
         print("Not in the US-close window; skipping (use --force to test).")
         return

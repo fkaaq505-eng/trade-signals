@@ -110,6 +110,18 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
    has no usable intraday history, and TradingView has no official data API (only
    ToS-violating scrapers that are also bar-limited). Manual CSV export is the clean
    path. Next real step: pull multi-year 5m/1m bars, re-run, then forward-test.
+9. **Funded strategy researched + built — `orb.py`, `FUNDED.md`.** Opening Range
+   Breakout (the standard prop setup) with evidence-based risk rules (1% risk, stop
+   = range opposite, 1.5R target, EOD-flat, trend filter). Research (FUNDED.md):
+   pass rate 5–10%, ~80% fail on risk-management not strategy. HONEST EDGE VERDICT:
+   ORB is negative-expectancy on SPY 15m free data (−0.018R) — no proven edge.
+   `notify.py` has a funded mode: `STRATEGY=orb` pushes a daily ORB PLAN + risk
+   guardrails (framed as a plan, NOT a prediction). To make it the LIVE push you
+   must edit `.github/workflows/signal.yml` (set `STRATEGY: orb` + add a cron ~30min
+   after the US open, e.g. `0 14 * * 1-5` for 10:00 ET EDT) — that needs the
+   `workflow` OAuth scope (`gh auth refresh -h github.com -s workflow`). The default
+   stays `meanrev` (the only validated strategy); ORB is opt-in until validated on
+   real intraday data. Recommendation: don't make a no-edge strategy your sole push.
 
 ---
 
