@@ -237,6 +237,38 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
     cluster in dips) — NOT truly daily; nothing profitable is. Rejected DIA/XLF/XLE/XLV/
     XLP/financials/intl (win too low or net weak). Caveat: VTI≈SPY and XLK≈QQQ correlated
     (drop for less overlap); IWM/MDY carry higher drawdown (−13 to −26%) but pass the gate.
+18. **THE FUNDED QUEST — directive for the next agent (use everything, stay honest).**
+    User wants to PASS a funded/prop account and asked the next account to throw full
+    power at it (parallel sub-agents, deep research, paid data if needed). HARD HONESTY
+    (do not regress): every funded-LEGAL strategy tested in this repo LOSES out-of-sample
+    after fees — ORB, RSI2-intraday, VWAP, Bollinger, EMA-trend, ICT-sweep (`ict_sweep.py`),
+    full TJR-FVG model (`tjr_bot.py`) — all on real 5.4y Alpaca 5m SPY+QQQ. DO NOT re-run
+    these; they are dead ends. The genuinely UNEXPLORED frontier (where "everything" has
+    a real shot):
+      (a) REAL FUTURES DATA — only stock proxies (SPY/QQQ) were tested. TJR/ICT trade
+          NQ/ES, 24h, real Asia/London sessions. Get NQ/ES 1-5m history (Databento is
+          cheap/paid; or other) → test the session-liquidity + FVG model on the ACTUAL
+          instrument and hours. Never done here.
+      (b) FOREX + CRYPTO — 24h markets ICT/sweep models are NATIVELY designed for; never
+          tested here. BTC/ETH 1-5m is FREE + keyless (Binance/Coinbase/Kraken public
+          APIs) → write a loader like `alpaca_fetch.py`, OOS-test sweep/FVG/ORB there.
+          Crypto has the 24h + volatility + retail-stop liquidity these models target.
+      (c) THE DISCIPLINE / RISK ENGINE (most important, most honest) — research is
+          unanimous: ~80% fail funded on RISK MGMT, not strategy; survivors risk
+          0.5-1%/trade, ~3 trades/day, don't rush. Build a bot that ENFORCES the firm's
+          rules: auto position-size capped to the trailing/daily DD limit, daily-loss
+          lockout, max-trades/day, mandatory EOD-flat, consistency-rule tracker, profit-
+          target pacing. `fundeval.py` already simulates pass/fail — extend it into a live
+          guardrail. THIS is the honest "thing that lets you pass": a tested instrument +
+          iron risk control, NOT a magic entry signal.
+    HOW: spawn parallel sub-agents (one per avenue), deep WebSearch research (perplexity
+    key was 401), Alpaca CLI for READ-ONLY data + free crypto APIs. RULES UNCHANGED:
+    brutally honest, OOS + fees on EVERYTHING, NO fake win-rate, paper-only, never real
+    orders. Forward-test any candidate with `journal.py` / `autojournal.py` before trust.
+    Set honest expectations: most funded attempts fail regardless; the edge is discipline;
+    a profitable intraday signal may simply not exist on accessible data — if the OOS
+    tests say so, SAY SO. Do not sell hope. The validated daily meanrev (15-ETF basket)
+    stays the user's PERSONAL-account tool; it is NOT funded-legal (overnight + no stop).
 
 ---
 
