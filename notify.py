@@ -27,6 +27,7 @@ from news import fetch_headlines, high_impact_events
 from strategy import ATR_SL_MULT
 
 ET = ZoneInfo("America/New_York")
+AST = ZoneInfo("Asia/Riyadh")   # user is in Saudi Arabia; show local times too
 def _load_symbols() -> list[str]:
     """watchlist.txt (one symbol per line) wins; else SYMBOLS env; else SPY.
     The repo file lets us change the watchlist without touching the workflow."""
@@ -110,6 +111,13 @@ def near_us_open() -> bool:
     return now.weekday() < 5 and (9 * 60 + 55) <= minutes <= (10 * 60 + 45)
 
 
+def _et_ast(date_str: str, hh: int, mm: int) -> str:
+    """'09:30 ET / 16:30 AST' for an ET wall-clock time on the plan date. Saudi has
+    no DST; the US side shifts, and zoneinfo handles the offset for that date."""
+    et = datetime.strptime(date_str, "%Y-%m-%d").replace(hour=hh, minute=mm, tzinfo=ET)
+    return f"{hh:02d}:{mm:02d} ET / {et.astimezone(AST):%H:%M} AST"
+
+
 def push(title: str, body: str, tags: str = "chart_with_upwards_trend") -> None:
     if not NTFY_TOPIC:
         print(f"[dry-run: no NTFY_TOPIC] would push:\n  {title}\n{body}")
@@ -142,19 +150,41 @@ def push_orb_plan() -> None:
     def sp(price: float) -> str:               # SPY price -> index points, e.g. 7,579
         return f"{price * ratio:,.0f}"
 
-    shares = (ACCOUNT * RISK_PCT / 100.0) / plan["range"]
-    lines = [f"📋 SPY ORB plan — {plan['date']}  ·  {label}",
-             f"opening range {sp(plan['or_low'])}–{sp(plan['or_high'])} {label} pts "
-             f"(SPY {plan['or_low']}–{plan['or_high']})"]
+    risk_usd = ACCOUNT * RISK_PCT / 100.0
+    shares = risk_usd / plan["range"]
+    exit_str = _et_ast(plan["date"], 15, 55)
+
+    lines = [
+        f"📋 SPY ORB — {plan['date']} · {label}   (PAPER · no proven edge · not advice)",
+        f"now: {label} ≈ {spy_last * ratio:,.0f}  (SPY {spy_last:.2f})",
+        f"opening range = first 30m after the open ({_et_ast(plan['date'], 9, 30)}):",
+        f"  {sp(plan['or_low'])}–{sp(plan['or_high'])}  (SPY {plan['or_low']}–{plan['or_high']})",
+    ]
+
+    def bracket(emoji: str, side: str, entry: float, stop: float, target: float) -> list[str]:
+        verb = "buy" if side == "LONG" else "sell"
+        return [
+            f"{emoji} {side} — place ONE bracket order now, then walk away:",
+            f"  ENTRY  stop-{verb} {sp(entry)}  (SPY {entry})",
+            f"  STOP   {sp(stop)}  (SPY {stop})   = 1R",
+            f"  TARGET {sp(target)}  (SPY {target})   = +{RR}R",
+            f"  SIZE   ~{shares:.0f} SPY shares  (1% = ${risk_usd:,.0f} risk)",
+            f"  EXIT   flat by {exit_str} if neither hits",
+        ]
+
     if plan["long_ok"]:
-        lines.append(f"🟢 LONG entry >{sp(plan['or_high'])} · SL {sp(plan['or_low'])} "
-                     f"· TP {sp(plan['long_target'])}  (+{RR}R)")
+        lines += bracket("🟢", "LONG", plan["or_high"], plan["or_low"], plan["long_target"])
     if plan["short_ok"]:
-        lines.append(f"🔴 SHORT entry <{sp(plan['or_low'])} · SL {sp(plan['or_high'])} "
-                     f"· TP {sp(plan['short_target'])}  (+{RR}R)")
-    lines += [f"size 1% risk ≈ {shares:.0f} SPY shares  ·  FLAT by close (no overnight)",
-              "rules: ≤3 trades, stop ALWAYS, don't rush the target",
-              "⚠️ a PLAN not a prediction · ORB has no proven edge · paper/funded · not advice"]
+        lines += bracket("🔴", "SHORT", plan["or_low"], plan["or_high"], plan["short_target"])
+    skipped = [s for s, ok in (("LONG", plan["long_ok"]), ("SHORT", plan["short_ok"])) if not ok]
+    if skipped:
+        lines.append(f"({'/'.join(skipped)} skipped today — trend filter)")
+
+    lines += [
+        "how: one OCO/bracket order (stop-entry + attached SL + TP). Your broker fills",
+        "and manages it — no chart-watching. Cancel it if unfilled by the close.",
+        "⚠️ ORB has NO proven edge · PAPER only · you place the order, not me",
+    ]
     push(f"SPY ORB plan {plan['date']}", "\n".join(lines), tags="clipboard")
 
 
