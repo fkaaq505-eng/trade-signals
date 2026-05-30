@@ -122,6 +122,14 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
    `workflow` OAuth scope (`gh auth refresh -h github.com -s workflow`). The default
    stays `meanrev` (the only validated strategy); ORB is opt-in until validated on
    real intraday data. Recommendation: don't make a no-edge strategy your sole push.
+10. **"More accurate" chase — DEAD END, proven (`intraday_compare.py`, VWAP added
+    to `strategy.py`).** Built VWAP reversion + an accuracy-vs-profit bake-off of
+    high-win-rate intraday families. Result on SPY 15m: most ACCURATE (RSI2 57%
+    win) makes +1.3% net; the tighter-stop version is LESS accurate (45%) but more
+    profitable (+2.1%); VWAP is 56% "accurate" and LOSES (−0.2%). All trail buy-hold
+    (+10.8%). Lesson (the project's core rule, now demonstrated): win rate ≠ money;
+    none is a proven edge on free data. Stop chasing accuracy — chase validated
+    positive expectancy (needs real multi-year intraday data) or keep `meanrev`.
 
 ---
 

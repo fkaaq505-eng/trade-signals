@@ -139,6 +139,29 @@ def build_bbands(df: pd.DataFrame, trend: int = MR_TREND_SMA) -> pd.DataFrame:
     return _finalize(out, raw_buy, raw_sell, pct_b, uptrend, uptrend)
 
 
+def build_vwap(df: pd.DataFrame, k: float = 1.5, band: int = 20,
+               trend: int = 50) -> pd.DataFrame:
+    """Intraday VWAP mean reversion (high win rate, funded-style): in an uptrend,
+    buy when price is stretched k std-devs BELOW the session VWAP, exit back at
+    VWAP. Session VWAP resets each day. Needs volume + intraday bars."""
+    out = df.copy()
+    typical = (out["High"] + out["Low"] + out["Close"]) / 3.0
+    day = out.index.normalize()
+    cum_pv = (typical * out["Volume"]).groupby(day).cumsum()
+    cum_v = out["Volume"].groupby(day).cumsum().replace(0.0, pd.NA)
+    vwap = (cum_pv / cum_v).fillna(typical)
+    out["vwap"] = vwap
+    out["atr"] = atr(out, ATR_PERIOD)
+
+    dev = out["Close"] - vwap
+    sd = dev.rolling(band).std(ddof=0)
+    uptrend = out["Close"] > ema(out["Close"], trend)
+    pct_dev = (dev / sd.replace(0.0, pd.NA)).fillna(0.0)
+    raw_buy = uptrend & (out["Close"] < vwap - k * sd)
+    raw_sell = out["Close"] >= vwap
+    return _finalize(out, raw_buy, raw_sell, pct_dev, uptrend, uptrend)
+
+
 def build_indicators(df: pd.DataFrame, strategy: str = "trend",
                      session: str = "us_morning", rsi_buy: float = MR_RSI_BUY,
                      rsi_exit: float = MR_RSI_EXIT,
@@ -147,4 +170,6 @@ def build_indicators(df: pd.DataFrame, strategy: str = "trend",
         return build_meanrev(df, rsi_buy=rsi_buy, rsi_exit=rsi_exit, down_days=down_days)
     if strategy == "bb":
         return build_bbands(df)
+    if strategy == "vwap":
+        return build_vwap(df)
     return build_trend(df, session=session)
