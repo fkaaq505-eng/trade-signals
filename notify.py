@@ -183,9 +183,61 @@ def push_orb_plan() -> None:
     push(f"SPY ORB plan {plan['date']}", "\n".join(lines), tags="clipboard")
 
 
+def push_funded_plan() -> None:
+    """FUNDED mode: push today's disciplined eval session plan + live progress.
+    Discipline IS the edge (no entry edge exists — see FUNDED_EVAL.md). Reads the
+    private funded_state.json if present for live equity/buffer/days; otherwise shows
+    the firm's rules + sizing guidance. Reminds: which market, how often, flat by close."""
+    import os as _os
+    try:
+        import funded_forward as ff
+    except Exception as exc:                       # never let an import break the cron
+        push("Funded plan", f"could not load funded_forward: {exc}", tags="warning")
+        return
+    firm_key = _os.environ.get("FUNDED_FIRM", ff.DEFAULT_FIRM)
+    cfg = ff.FIRMS.get(firm_key, ff.FIRMS[ff.DEFAULT_FIRM])
+    acct = float(_os.environ.get("FUNDED_ACCOUNT", "50000"))
+    market = _os.environ.get("FUNDED_MARKET", "MNQ or MES (micro futures)")
+    target = acct * cfg.profit_target_pct / 100.0
+    buffer = acct * cfg.trailing_dd_pct / 100.0
+    daily = acct * cfg.daily_loss_limit_pct / 100.0
+    close_ast = _et_ast(datetime.now(ET).date().isoformat(), 15, 55).split(" / ")[1]
+
+    lines = [f"📋 Funded eval plan — {cfg.name}", f"market: {market} · US session, flat by {close_ast}"]
+    state_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ff.STATE_FILE)
+    if os.path.exists(state_path):                 # live progress if a paper attempt is running
+        try:
+            from risk_engine import status_summary
+            s = status_summary(ff.load_state(state_path, firm_key, acct))
+            if s["eval_passed"]:
+                lines.append("✅ PASSED — stop, bank it.")
+            elif s["eval_failed"]:
+                lines.append(f"❌ FAILED — {s['failure_reason'][:80]} · reset for a fresh attempt")
+            else:
+                lines += [
+                    f"equity ${s['current_equity']:,.0f} · ${target - s['cumulative_profit']:,.0f} to target",
+                    f"DD buffer ${s['trailing_dd_buffer_remaining']:,.0f} · {s['days_remaining']}d left"
+                    f"{' · ⛔LOCKED' if s['daily_locked_out'] else ''}",
+                ]
+        except Exception as exc:                   # corrupt/old state must not break the push
+            lines.append(f"(state unreadable: {exc})")
+    else:
+        lines.append(f"target +${target:,.0f} · DD buffer ${buffer:,.0f} · daily-loss ${daily:,.0f}")
+
+    lines += [
+        f"RULES: risk ~0.5-1%/trade · max {cfg.max_trades_per_day} trades/day · NEVER oversize",
+        "~1-3 trades/day, only the clean US-open hours. No setup = no trade.",
+        "Log every paper trade: funded_forward.py · ⚠️ paper, no edge, discipline is the job",
+    ]
+    push(f"Funded plan {datetime.now(ET).date()}", "\n".join(lines), tags="clipboard")
+
+
 def main() -> None:
     force = "--force" in sys.argv
     brief = "--brief" in sys.argv
+    if STRATEGY == "funded":        # funded eval discipline plan + progress (own cron)
+        push_funded_plan()
+        return
     if STRATEGY == "orb":          # funded mode: ORB plan at the open (own cron)
         if force or near_us_open():
             push_orb_plan()

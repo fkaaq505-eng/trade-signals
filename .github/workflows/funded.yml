@@ -1,0 +1,34 @@
+name: funded-eval-notify
+
+# Pushes a daily FUNDED-EVAL discipline plan via ntfy (free, laptop closed). It is a
+# coach, not a signal: the firm's rules, position-sizing guardrails, which market to
+# trade, trade frequency, and (if a local paper attempt is running and its state is
+# present) live progress to target. Discipline is the only edge — there is no validated
+# entry edge (see FUNDED_EVAL.md / HANDOFF 7-20).
+#
+# *** PAPER ONLY. Never places an order. Maximises the CHANCE to pass; it does not make
+#     money — funded payouts require an edge that does not exist on free data. ***
+#
+# One push per weekday, ~16:00 AST / pre-US-open, so the plan lands before you trade.
+
+on:
+  schedule:
+    - cron: "0 13 * * 1-5"   # 13:00 UTC = 16:00 AST (pre-US-open)
+  workflow_dispatch: {}        # manual run from the Actions tab
+
+jobs:
+  funded:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Push funded eval plan
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          STRATEGY: funded
+          FUNDED_FIRM: apex_eod          # change to your chosen firm (see FUNDED_EVAL.md)
+          FUNDED_MARKET: "MNQ or MES (micro futures)"
+        run: python notify.py
