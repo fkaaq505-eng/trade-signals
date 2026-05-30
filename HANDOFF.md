@@ -62,6 +62,7 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
 `intraday_oos.py` (intraday OOS test, incl EMA-trend) · `orb_oos.py` (ORB OOS on real
 5m, RTH-filtered, fee-in-R) · `ict_sweep.py` (ICT/TJR sweep-reversal OOS test, no edge) ·
+`journal.py` (log YOUR paper trades → real win/expectancy/net-after-fees, any strat) ·
 `data_csv.py` (load OHLCV CSV) ·
 `alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup) ·
@@ -185,6 +186,15 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
       intraday edge survives fees — matches our data. Funded success = risk discipline,
       not a strategy. Only real perf lever left = the VIX<25 meanrev option (item 3):
       same 82% win, ~half drawdown, less net — NOT enabled (user's call: return↔smooth).
+14. **Trade journal — DONE (`journal.py`).** Record-only logger for the user's actual
+    paper trades → real win% / expectancy% / net-after-fees / profit factor / max-DD,
+    filterable by strategy tag. The honest way to measure ANY method, incl. a
+    discretionary TJR/ICT "feel" (full ICT is unfalsifiable, so only a real logged
+    sample can judge it). Fees on both legs, recomputed from raw fields (no drift).
+    Local CSV (`journal.csv`, gitignored = private). Usage: `python journal.py add
+    --strat meanrev --symbol SPY --side long --entry 756.5 --exit 761.2 --size 100`,
+    then `python journal.py stats [--strat X]`. Rule printed: expectancy>0 AND PF>~1.3
+    over 30+ trades = real edge; high win% + negative expectancy = the win-rate trap.
 
 ---
 
