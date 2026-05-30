@@ -95,9 +95,20 @@ def cmd_live(df, args):
     print("\n  NOTE: rules-based output, not advice. You decide. Paper-trade first.")
 
 
+def cmd_funded(args):
+    """The MAIN funded-eval flow: show today's disciplined paper plan (risk_engine-
+    enforced). Delegates to funded_forward; state persists in funded_state.json.
+    Pick the firm with FUNDED_EVAL.md / eval_montecarlo.py (default Apex 4.0 EOD)."""
+    import funded_forward as ff
+    firm = args.firm if args.firm in ff.FIRMS else ff.DEFAULT_FIRM
+    state = ff.load_state(ff.STATE_FILE, firm, args.account)
+    state = ff.cmd_plan(state, args)
+    ff.save_state(ff.STATE_FILE, state)
+
+
 def main():
     p = argparse.ArgumentParser(description="Mechanical buy/sell signal tool (no broker, no orders).")
-    p.add_argument("mode", choices=["backtest", "live", "both"])
+    p.add_argument("mode", choices=["backtest", "live", "both", "funded"])
     p.add_argument("--strategy", default="trend", choices=["trend", "meanrev", "bb"])
     p.add_argument("--symbol", default=DEFAULT_SYMBOL)
     p.add_argument("--period", default=None)
@@ -122,8 +133,19 @@ def main():
                    help="scale-in: capital fraction at first signal (default 0.5)")
     p.add_argument("--add-frac", type=float, default=0.5,
                    help="scale-in: capital fraction added on deeper dip (default 0.5)")
-    args = resolve(p.parse_args())
+    p.add_argument("--firm", default="apex_eod",
+                   help="funded mode: firm rule set (see FUNDED_EVAL.md / eval_montecarlo.py)")
+    p.add_argument("--account", type=float, default=50_000.0,
+                   help="funded mode: eval account size (default 50k)")
+    p.add_argument("--now", default=None, help="funded mode: override 'now' (ISO, for testing)")
+    parsed = p.parse_args()
 
+    # MAIN funded-eval flow — no market fetch needed (risk discipline, not a signal).
+    if parsed.mode == "funded":
+        cmd_funded(parsed)
+        return
+
+    args = resolve(parsed)
     df = fetch(args.symbol, args.period, args.interval)
     if args.mode in ("backtest", "both"):
         cmd_backtest(df, args)

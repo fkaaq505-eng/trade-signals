@@ -5,3 +5,6 @@ __pycache__/
 *.csv
 # auto-journal forward-test record IS tracked; manual journal.csv stays private
 !journal_orb.csv
+# funded forward-test state is private/local (your live eval attempt)
+funded_state.json
+funded_state.json.prev

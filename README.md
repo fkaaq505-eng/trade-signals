@@ -9,6 +9,17 @@ that strategy on history, and can push the signal to your phone.
 > **not** financial advice. It applies math to price data. Every decision
 > to act with real money is yours. Paper-trade first.
 
+**Two things live here:**
+1. **The validated signal** — daily Connors RSI(2) mean reversion on an index-ETF
+   basket (~78% win out-of-sample). The only edge that survived honest testing; it
+   is what the phone notifier pushes. Personal account, not funded-legal.
+2. **The funded-eval pass system (main focus)** — there is **no** intraday trading
+   edge on accessible free data (proven across SPY/QQQ/NQ/ES/CFD/crypto — see
+   `HANDOFF.md` 7-19). So passing a funded prop eval is a *probability + discipline*
+   game, not a magic signal. `eval_montecarlo.py` computes the highest-odds plan,
+   `risk_engine.py` enforces the rules, and `funded_forward.py` runs a live paper
+   forward-test. Start here: **[FUNDED_EVAL.md](FUNDED_EVAL.md)**.
+
 ## Setup
 
 ```bash
@@ -30,6 +41,33 @@ python3 -m venv .venv
 ```
 
 Symbols: `SPY`/`^GSPC` = S&P 500, `QQQ`/`^NDX`/`^IXIC` = Nasdaq.
+
+## Funded prop evaluation — the highest-chance-to-pass system
+
+No intraday strategy edge exists on free data, so this is engineered as a probability
+game: **pick the best-barrier firm, size to reach the ceiling, take cheap-reset attempts,
+and enforce iron discipline.** Honest pass odds, not hope.
+
+```bash
+# 1. See the highest-P(pass) plan + firm comparison (Monte Carlo)
+.venv/bin/python eval_montecarlo.py            # add --trials 50000 for tighter numbers
+
+# 2. Run a live PAPER forward-test of one eval attempt (risk_engine-enforced)
+.venv/bin/python cli.py funded --firm apex_eod        # today's disciplined plan
+.venv/bin/python funded_forward.py fill --entry 20000 --stop 19960   # open (auto-capped)
+.venv/bin/python funded_forward.py close --exit 20030 --side long    # close + journal it
+.venv/bin/python funded_forward.py status             # equity / buffer / days / pass-fail
+.venv/bin/python journal.py stats --strat funded      # your real track record
+
+# 3. Score it before paying any eval fee. expectancy > 0 over 30+ trades = ready.
+```
+
+- **[FUNDED_EVAL.md](FUNDED_EVAL.md)** — the playbook: firm table, the barrier-ratio math,
+  the disciplined ceiling (~32–44%/attempt) vs the real ~5–20%, and the brutal caveats.
+- `risk_engine.py` — auto-size to the DD buffer, daily-loss lockout, EOD-flat, Apex
+  (intraday-trail) vs Topstep (EOD-trail) modes. 61 unit tests.
+- **Honest:** this maximises P(pass); it does **not** create profit. Passing the eval is
+  the easy hurdle — keeping a funded account with no edge is the hard one. Most fail anyway.
 
 ## Two strategies (`--strategy`)
 

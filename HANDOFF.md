@@ -310,6 +310,33 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
       exists. The honest path to passing a funded eval is IRON RISK DISCIPLINE (the engine), applied
       to a tested instrument, accepting that most attempts fail regardless. Not a magic signal — there
       isn't one on free data. Big data CSVs are gitignored; re-pull via `futures_fetch.py`/`crypto_fetch.py`.
+20. **PASS-A-FUNDED system built + set as MAIN focus (`eval_montecarlo.py`, `funded_forward.py`,
+    `FUNDED_EVAL.md`; extends `risk_engine.py`).** User asked for "the best strat to pass the
+    funded, set as main." Since no entry edge exists (items 7-19), reframed honestly as a
+    PROBABILITY + DISCIPLINE game and built the tools:
+    - `eval_montecarlo.py` — Monte Carlo of the eval as a finite barrier game; validated against
+      closed-form gambler's ruin (static-DD breakeven ≈ barrier ratio). CORE TRUTH: **P(pass) is
+      capped by the barrier ratio buffer/(buffer+target); no sizing trick beats it without an
+      edge.** Levers: firm/DD-type, size (timid is strictly worst; bold → one coin-flip at
+      win-rate), attempts (1-(1-p)^k). Levers INTERACT (skew has no universal best) → trust the
+      joint optimiser, not single-lever rules. Researched 2026 firm rules (sub-agent): Topstep is
+      intraday-trail + 50% consistency (HARD); winners are EOD-"lock" firms (Alpha Zero, Apex 4.0
+      EOD — floor freezes once ~+$2,100) and big-buffer Bulenox (ratio 0.45). Disciplined ceiling
+      ~32-44%/attempt vs real documented 5-20%; only ~7% ever get a payout.
+    - `FUNDED_EVAL.md` — the playbook (firm table, the barrier math, multi-attempt $-cost, caveats).
+    - `funded_forward.py` — live PAPER forward-test of one attempt: risk_engine sizes every trade to
+      the DD buffer, enforces daily lockout / max-trades / EOD-flat, tracks progress, flags PASS/FAIL,
+      logs closed trades to `journal.csv` (strat=funded). State persists in `funded_state.json`
+      (gitignored). Commands plan/fill/close/status/reset. Tested end-to-end (PASS, DD-breach FAIL,
+      lockout, journal scoring). Global flags (`--firm/--now`) go BEFORE the subcommand (argparse).
+    - **"Set as main":** `funded` is now a first-class `cli.py funded` command and the README leads
+      with the funded system — the project's primary focus. DELIBERATELY did NOT hijack the phone
+      cron to push the no-edge tracker (statefulness + the honesty rule: don't push a no-edge thing
+      as the sole signal). The notifier still pushes the VALIDATED meanrev (signal.yml). To add phone
+      pushes of eval progress later, commit `funded_state.json` back from a cron like autojournal.yml.
+      NOTE: risk_engine's eod-mode failure message hardcodes "Topstep" even for apex_eod (cosmetic;
+      numbers correct). Honesty held: maximises P(pass), does NOT make money; EV negative; passing
+      the eval ≠ keeping the funded account.
 
 ---
 
