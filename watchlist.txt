@@ -1,12 +1,27 @@
 # Symbols the notifier watches (one per line). Edit + push to change.
-# Multi-symbol meanrev basket: more signals than SPY-only while KEEPING the edge.
-# Each backtested 12y (Connors RSI2, all win>=69% + profitable). SPY is best;
-# SMH has the highest drawdown (~-24%). Widen for more frequency (lower quality),
-# trim for fewer/cleaner. NOTE: these are correlated equity ETFs, so BUY signals
-# cluster on selloff days (several at once) rather than spreading evenly.
+# Wide meanrev basket: max signal frequency WHILE keeping an edge. Each backtested
+# 12y on the validated Connors RSI2 config (max_hold=240, event filter on) and passed
+# win>=68% AND net-positive. Avg ~0.5 signals/trading-day (~2-3/week) but LUMPY:
+# correlated names cluster BUY signals on selloff days, nothing on calm/up days.
+# Mean reversion can't fire every day (it needs a dip). HYG/bonds decorrelate a bit.
+# High-drawdown names (size small): KRE, IWM, XOP, SMH, SOXX. Trim for fewer/cleaner.
 SPY
 QQQ
+DIA
+IWM
+MDY
 XLK
-SMH
+XLY
+XLI
 XLV
+XLP
+XLC
+SMH
+SOXX
+IGV
+XOP
+KRE
+HYG
 EEM
+EWG
+INDA
