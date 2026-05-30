@@ -232,9 +232,39 @@ def push_funded_plan() -> None:
     push(f"Funded plan {datetime.now(ET).date()}", "\n".join(lines), tags="clipboard")
 
 
+def push_tjr_plan() -> None:
+    """MAIN funded method: push today's TJR session-liquidity + FVG plan, funded-sized.
+    TJR has NO validated edge (HANDOFF 16/19-20) — it is a funded-LEGAL, disciplined way
+    to take the trade and ride the eval's variance. Levels from free Yahoo NQ=F/ES=F."""
+    import os as _os
+    try:
+        from tjr_funded import build_plan
+        symbol = _os.environ.get("FUNDED_SYMBOL", "MNQ")
+        acct = float(_os.environ.get("FUNDED_ACCOUNT", "50000"))
+        risk = float(_os.environ.get("FUNDED_RISK_PCT", "0.75"))
+        p = build_plan(symbol, acct, risk)
+    except Exception as exc:                       # never break the cron on a data hiccup
+        push("TJR plan", f"could not build TJR plan: {exc}", tags="warning")
+        return
+    flat_ast = p["flat_by"].split(" / ")[1]
+    lines = [
+        f"📋 TJR plan {p['symbol']} — paper, no proven edge, discipline play",
+        f"pools ({p['prior_day']}): PDH {p['pdh']} · PDL {p['pdl']} · now {p['last']}",
+        f"size {p['contracts']} {p['symbol']} = ${p['risk_dollars']:,.0f} risk · stop {p['stop_pts']}pts · R:R ~{p['rr']}:1",
+        f"🔴 raid ABOVE {p['pdh']} + bearish FVG → SHORT, stop {p['short']['stop']}, target {p['pdl']}",
+        f"🟢 raid BELOW {p['pdl']} + bullish FVG → LONG, stop {p['long']['stop']}, target {p['pdh']}",
+        f"one setup/day · NO raid+FVG = NO trade · flat by {flat_ast}",
+        "⚠️ no edge — funded-legal discipline only. Log it: journal.py",
+    ]
+    push(f"TJR plan {p['symbol']} {datetime.now(ET).date()}", "\n".join(lines), tags="clipboard")
+
+
 def main() -> None:
     force = "--force" in sys.argv
     brief = "--brief" in sys.argv
+    if STRATEGY == "tjr":           # MAIN funded method: TJR session-liquidity plan
+        push_tjr_plan()
+        return
     if STRATEGY == "funded":        # funded eval discipline plan + progress (own cron)
         push_funded_plan()
         return

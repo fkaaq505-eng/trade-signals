@@ -362,6 +362,24 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
       firm pays = ~8-15% optimal, ~5-6% realistic (Topstep's own data: 16.8% reach funded, 33% of
       those ever paid). EV negative; not regulated; firms profit on fees. Refocused README + this
       doc on the funded goal but KEPT meanrev (only validated edge) as the phone push.
+22. **TJR set as the MAIN funded method (`tjr_funded.py`, notify `STRATEGY=tjr`, `cli.py tjr`,
+    `funded.yml`).** User: "use the TJR method as main, make it funded-compatible, make it main."
+    Held the honesty line FIRST: TJR has NO validated edge (negative OOS on SPY/QQQ/NQ/ES/CFD/crypto
+    — items 16, 19-20) and was told so plainly. Reframed honestly: passing is a discipline+variance
+    game (P(pass) ≈ barrier ratio regardless of entry), and TJR is genuinely funded-LEGAL (intraday,
+    hard stop beyond the raid, target = opposite liquidity pool, EOD-flat, 1 setup/day) — so it's a
+    coherent disciplined ENTRY METHOD for the eval, NOT a profit engine.
+    - `tjr_funded.py`: live plan from free Yahoo NQ=F/ES=F — prior-day H/L = liquidity pools (PDH/PDL);
+      frames BOTH conditional setups (raid above PDH + bearish FVG → SHORT target PDL; mirror for LONG);
+      funded-sized contracts (risk% ÷ (stop_pts × point_value)); stop beyond raid; target = opposite
+      pool (R:R capped 5:1); flat by 15:55 ET. Point values MNQ $2 / MES $5 / NQ $20 / ES $50.
+    - notify `push_tjr_plan()` pushes it; `funded.yml` now STRATEGY=tjr, FUNDED_SYMBOL=MNQ (was the
+      firm-rules coach). `cli.py tjr --symbol MNQ|MES` prints the plan. Every surface labeled
+      "no proven edge · funded-legal discipline only · log with journal.py".
+    - It is CONDITIONAL like push_orb_plan (watch pools; no raid+FVG = no trade), not a fired signal.
+    - meanrev (signal.yml) STILL the validated push; the firm-rules coach mode (STRATEGY=funded) kept.
+    Honesty held: TJR-as-main = disciplined funded-legal entry for the variance game; does NOT make
+    money; EV still negative; getting a payout still ~5-6% realistic (FUNDED_EVAL.md chain).
 
 ---
 

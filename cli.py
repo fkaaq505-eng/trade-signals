@@ -108,7 +108,7 @@ def cmd_funded(args):
 
 def main():
     p = argparse.ArgumentParser(description="Mechanical buy/sell signal tool (no broker, no orders).")
-    p.add_argument("mode", choices=["backtest", "live", "both", "funded"])
+    p.add_argument("mode", choices=["backtest", "live", "both", "funded", "tjr"])
     p.add_argument("--strategy", default="trend", choices=["trend", "meanrev", "bb"])
     p.add_argument("--symbol", default=DEFAULT_SYMBOL)
     p.add_argument("--period", default=None)
@@ -143,6 +143,13 @@ def main():
     # MAIN funded-eval flow — no market fetch needed (risk discipline, not a signal).
     if parsed.mode == "funded":
         cmd_funded(parsed)
+        return
+
+    # TJR method as today's funded-legal day-trade plan (the main trading method).
+    if parsed.mode == "tjr":
+        import tjr_funded as tj
+        sym = parsed.symbol if parsed.symbol.upper() in tj.INSTRUMENTS else "MNQ"
+        print("\n" + tj.format_plan(tj.build_plan(sym.upper(), parsed.account)))
         return
 
     args = resolve(parsed)

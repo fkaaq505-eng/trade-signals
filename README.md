@@ -48,7 +48,15 @@ No intraday strategy edge exists on free data, so this is engineered as a probab
 game: **pick the best-barrier firm, size to reach the ceiling, take cheap-reset attempts,
 and enforce iron discipline.** Honest pass odds, not hope.
 
+**Main trading method: TJR** (session-liquidity raid → FVG reversal). It has **no
+validated money edge** (tested negative OOS everywhere — HANDOFF 16/19-20), but it is
+**funded-legal** (intraday, hard stop beyond the raid, target = opposite liquidity pool,
+EOD-flat) — a disciplined, rule-based way to take the trade and ride the eval's variance.
+
 ```bash
+# MAIN: today's TJR funded-legal day-trade plan (free Yahoo NQ=F/ES=F), funded-sized
+.venv/bin/python cli.py tjr --symbol MNQ       # micro Nasdaq (or MES for the calmer S&P)
+
 # 1. See the highest-P(pass) plan + firm comparison (Monte Carlo)
 .venv/bin/python eval_montecarlo.py            # add --trials 50000 for tighter numbers
 

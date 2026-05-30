@@ -1,10 +1,10 @@
-name: funded-eval-notify
+name: tjr-funded-notify
 
-# Pushes a daily FUNDED-EVAL discipline plan via ntfy (free, laptop closed). It is a
-# coach, not a signal: the firm's rules, position-sizing guardrails, which market to
-# trade, trade frequency, and (if a local paper attempt is running and its state is
-# present) live progress to target. Discipline is the only edge — there is no validated
-# entry edge (see FUNDED_EVAL.md / HANDOFF 7-20).
+# MAIN: pushes today's TJR session-liquidity + FVG day-trade PLAN via ntfy (free, laptop
+# closed), funded-sized for a 50k eval. The TJR method is funded-LEGAL (intraday, hard stop
+# beyond the raid, target = opposite liquidity pool, EOD-flat). It has NO validated money
+# edge (HANDOFF 16/19-20) — it is a disciplined, rule-based way to take the trade and ride
+# the eval's variance. Switch STRATEGY back to 'funded' for the firm-rules coach instead.
 #
 # *** PAPER ONLY. Never places an order. Maximises the CHANCE to pass; it does not make
 #     money — funded payouts require an edge that does not exist on free data. ***
@@ -25,10 +25,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - name: Push funded eval plan
+      - name: Push TJR funded plan
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          STRATEGY: funded
-          FUNDED_FIRM: apex_eod          # budget pick; topstep = best payout integrity (FUNDED_EVAL.md)
-          FUNDED_MARKET: "MES micro S&P (or MNQ for momentum)"
+          STRATEGY: tjr                  # MAIN method: TJR session-liquidity + FVG plan
+          FUNDED_SYMBOL: MNQ             # micro Nasdaq (or MES for the calmer S&P)
+          FUNDED_ACCOUNT: "50000"
+          FUNDED_RISK_PCT: "0.75"
         run: python notify.py
