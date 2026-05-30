@@ -64,6 +64,7 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
 5m, RTH-filtered, fee-in-R) · `ict_sweep.py` (ICT/TJR sweep-reversal OOS test, no edge) ·
 `journal.py` (log YOUR paper trades → real win/expectancy/net-after-fees, any strat) ·
 `autojournal.py` (system auto-logs ORB TP/SL/EOD outcomes → `journal_orb.csv`) ·
+`tjr_bot.py` (TJR "Path to Profitability" model mechanized + OOS-tested, no edge) ·
 `data_csv.py` (load OHLCV CSV) ·
 `alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup) ·
@@ -208,6 +209,19 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
     `journal.csv` stays private/local. Backfilled 46 days on first run: 41% win,
     −$1,793, PF 0.87 — confirms ORB has no edge live, exactly as the OOS tests said.
     View: `python journal.py --file journal_orb.csv stats --strat orb`.
+16. **TJR "Path to Profitability" — LEARNED + TESTED, NO EDGE (`tjr_bot.py`).** User
+    asked to "make the bot learn" the 14-video TJR series. Can't watch video → pulled
+    all 14 transcripts (`youtube-transcript-api`; yt-dlp got bot-throttled). Extracted
+    the mechanical core: session-liquidity RAID (stop-hunt) → break of structure →
+    Fair Value Gap entry → stop past the raid → target opposite liquidity, 1-3% risk.
+    Mechanized + OOS 70/30 on real 5m SPY AND QQQ (Nasdaq ≈ TJR's NQ): BOTH NEGATIVE —
+    SPY OOS −0.05R, QQQ OOS −0.12R, ~30-37% win. Adapted to stocks (PDH/PDL = the
+    liquidity pool, since SPY/QQQ lack 24h Asia/London sessions and Alpaca has no
+    futures — an honest proxy, not the exact hours). FIRST cut showed 100% win/+5R =
+    a look-ahead bug (returned target R without simulating stop-vs-target path); fixed
+    to walk bars forward. Same verdict as ORB/RSI2/VWAP/ict_sweep. The series' real
+    value = discipline/psychology ("flow state"), NOT a codeable edge — measure any
+    discretionary attempt with `journal.py`. Transcripts pulled to /tmp (not committed).
 
 ---
 
