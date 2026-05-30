@@ -337,6 +337,31 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
       NOTE: risk_engine's eod-mode failure message hardcodes "Topstep" even for apex_eod (cosmetic;
       numbers correct). Honesty held: maximises P(pass), does NOT make money; EV negative; passing
       the eval ≠ keeping the funded account.
+21. **PAYOUT-VERIFIED firm/market/frequency + noty + project refocused (`FUNDED_EVAL.md`,
+    `notify.py` funded mode, `.github/workflows/funded.yml`).** User: "set my noty, which market,
+    is Bulenox real/pays, how often, sole purpose = pass a VERIFIED funded + get payouts." Did all,
+    honestly:
+    - **Noty:** `STRATEGY=funded` → `notify.py:push_funded_plan()` pushes a daily discipline plan
+      (firm rules, sizing, market, frequency, live progress from funded_state.json if present).
+      `funded.yml` cron fires one weekday push ~16:00 AST (pre-US-open), reuses the existing
+      NTFY_TOPIC secret. Degrades safely on any error.
+    - **Bulenox verdict (sub-agent, sourced):** REAL + pays (Trustpilot 4.8/1.5k, documented
+      withdrawals) BUT **RISKY** — an undocumented "flip-day" rule (Master Agreement §5.6) has
+      denied rule-compliant payouts. Use only as a secondary. Corrected eval_montecarlo: it still
+      shows Bulenox highest pass-ODDS (big buffer, 0.45) but now warns pass-odds ≠ get-paid.
+    - **Firm for PASS×PAYOUT:** #1 **Topstep** (EOD-trail BOTH eval+funded, cleanest payouts, no
+      lifetime cap, Standard path = NO consistency — FIXED my earlier mis-model that had Topstep as
+      intraday+consistency; it is EOD). #2 **Apex 4.0 EOD** (cheapest ~$20 promo resets, automated
+      Deel payouts no human can deny, $598M+ paid, but 6-payout ~$13k lifetime cap). #3 Take Profit
+      (funded PRO = intraday trap). Tooling default stays apex_eod (cheapest for a no-money user).
+    - **Market:** micros — **MES** (default, smoother, easier consistency) or MNQ (momentum). Tick
+      values MES $1.25 / MNQ $0.50. US-open session (16:30-18:30 AST), flat by close.
+    - **Frequency:** 2-5 trades/day over ~10-15 trading days (~2-3 weeks) — consistency rules force
+      spreading gains; rushing one big day voids payouts.
+    - **The honest CHAIN (in FUNDED_EVAL.md):** P(pass ~30-44%) × P(reach funded payout ~30-40%) ×
+      firm pays = ~8-15% optimal, ~5-6% realistic (Topstep's own data: 16.8% reach funded, 33% of
+      those ever paid). EV negative; not regulated; firms profit on fees. Refocused README + this
+      doc on the funded goal but KEPT meanrev (only validated edge) as the phone push.
 
 ---
 

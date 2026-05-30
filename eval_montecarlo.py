@@ -85,10 +85,10 @@ APEX_EOD = EvalFirm(              # #2: EOD-lock@+$100, no consistency, 30-day c
     lock_floor_offset_pct=0.2, consistency_ratio=0.0, min_days=1, max_days=30,
     eval_fee=119.0, reset_fee=20.0)   # ~$20 eval promo + $99 activation amortised
 
-TOPSTEP_INTRADAY = EvalFirm(      # the HARD one: intraday-trailing + 50% consistency
-    "Topstep 50k (intraday-trail + 50% consistency)",
-    dd_pct=4.0, target_pct=6.0, daily_loss_pct=2.0, mode="intraday",
-    lock_floor_offset_pct=0.0, consistency_ratio=0.50, min_days=0, max_days=0,
+TOPSTEP = EvalFirm(               # #1 for PASS x PAYOUT: EOD-trail both stages, clean payouts
+    "Topstep 50k (EOD-trail, Standard path: no consistency)",
+    dd_pct=4.0, target_pct=6.0, daily_loss_pct=2.0, mode="eod",
+    lock_floor_offset_pct=0.0, consistency_ratio=0.0, min_days=2, max_days=0,
     eval_fee=49.0, reset_fee=49.0)
 
 ELITE_STATIC = EvalFirm(          # true STATIC floor, but worse ratio (target 8%)
@@ -103,7 +103,7 @@ BULENOX_INTRA = EvalFirm(         # intraday-trail BUT big $2,500 buffer (ratio 
     lock_floor_offset_pct=0.0, consistency_ratio=0.0, min_days=0, max_days=0,
     eval_fee=87.0, reset_fee=78.0)
 
-ALL_FIRMS = [ALPHA_ZERO, APEX_EOD, TOPSTEP_INTRADAY, BULENOX_INTRA, ELITE_STATIC]
+ALL_FIRMS = [ALPHA_ZERO, APEX_EOD, TOPSTEP, BULENOX_INTRA, ELITE_STATIC]
 
 
 @dataclass(frozen=True)
@@ -221,17 +221,17 @@ def demo_levers(trials: int) -> None:
     print(f"     until you're ahead); the extreme is just a single coin-flip at your win-rate.")
 
     _hdr("LEVER 4 — payoff SKEW at EQUAL expectancy (E=-0.03R, risk 1%) — by firm")
-    print(f"{'style':<20}{'win_r':>7}{'win%':>7}{'ALPHA':>8}{'TOPSTEP':>9}")
-    print("-" * 51)
+    print(f"{'style':<20}{'win_r':>7}{'win%':>7}{'ALPHA(eod)':>11}{'BULENOX(intra)':>15}")
+    print("-" * 60)
     for win_r, name in ((0.4, "high win/small R"), (1.0, "symmetric"),
                         (2.0, "positive skew"), (4.0, "lottery skew")):
         p = win_rate_for(-0.03, win_r)
         ra = monte_carlo(ALPHA_ZERO, SimParams(-0.03, win_r, 1.0, 2), trials)["pass"]
-        rt = monte_carlo(TOPSTEP_INTRADAY, SimParams(-0.03, win_r, 1.0, 2), trials)["pass"]
-        print(f"{name:<20}{win_r:>7.1f}{p:>7.0%}{ra:>8.1%}{rt:>9.1%}")
-    print("  -> ALPHA and TOPSTEP DISAGREE on the best skew — it interacts with sizing, DD-type")
-    print("     and the rules. No universal 'best' payoff shape; the optimiser searches skew x")
-    print("     size x trades/day jointly per firm. Don't trust a single-lever rule of thumb.")
+        rb = monte_carlo(BULENOX_INTRA, SimParams(-0.03, win_r, 1.0, 2), trials)["pass"]
+        print(f"{name:<20}{win_r:>7.1f}{p:>7.0%}{ra:>11.1%}{rb:>15.1%}")
+    print("  -> best skew is NOT universal: at small 1% size more skew helps (tiny losses, deep")
+    print("     buffer); at larger size it flips (long streaks breach the floor first). Skew x")
+    print("     size x DD-type interact, so the optimiser searches them jointly. No rule of thumb.")
 
 
 def optimize(firm: EvalFirm, trials: int) -> tuple[SimParams, dict]:
@@ -262,8 +262,11 @@ def report(trials: int) -> None:
     firm, s, r = max(rows, key=lambda x: x[2]["pass"])
     p = r["pass"]
     _hdr("RECOMMENDATION + MULTI-ATTEMPT (the realistic 'whatever it takes' path)")
-    print(f"Highest-odds firm: {firm.name}  (barrier {barrier_ratio(firm):.0%})")
+    print(f"Highest pass-ODDS firm: {firm.name}  (barrier {barrier_ratio(firm):.0%})")
     print(f"  P(pass)/attempt ~= {p:.1%}  (fail: DD {r['dd']:.0%}, timeout {r['timeout']:.0%})")
+    print("  ⚠️ PASS-ODDS != GET-PAID. Bulenox has a documented undocumented 'flip-day' rule that")
+    print("     has denied rule-compliant payouts. For pass AND a verified payout, use TOPSTEP")
+    print("     (EOD both stages, cleanest payouts) or Apex (automated). See FUNDED_EVAL.md.")
     print(f"  sizing at the max: {s.risk_pct:.2f}% risk/trade, win_r={s.win_r:.1f}, "
           f"{s.trades_per_day} trade(s)/day")
     print("  (note: the max-P(pass) sizing is high-variance — it clears the target in a few")

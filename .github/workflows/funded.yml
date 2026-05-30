@@ -29,6 +29,6 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           STRATEGY: funded
-          FUNDED_FIRM: apex_eod          # change to your chosen firm (see FUNDED_EVAL.md)
-          FUNDED_MARKET: "MNQ or MES (micro futures)"
+          FUNDED_FIRM: apex_eod          # budget pick; topstep = best payout integrity (FUNDED_EVAL.md)
+          FUNDED_MARKET: "MES micro S&P (or MNQ for momentum)"
         run: python notify.py

@@ -1,72 +1,97 @@
-# Highest-Probability Funded-Eval Playbook
+# Funded Eval → Payout Playbook (verified May 2026)
 
-**Goal:** maximise the probability of PASSING a funded futures evaluation, honestly.
-**Premise (proven, HANDOFF 7-19):** there is no validated trading edge on accessible
-free data — ORB/RSI2/VWAP/FVG/sweep all lose out-of-sample after fees on SPY/QQQ, real
-NQ/ES futures, NQ/ES index CFDs (5.4y), and BTC/ETH. So passing is NOT about a magic
-signal. It is a **finite probability game** you optimise with firm choice, sizing, and
-attempts. Tool: `eval_montecarlo.py` (Monte Carlo, validated against gambler's ruin).
+**Project's sole purpose now:** pass a funded futures evaluation and extract a real
+payout. This doc is the verified plan. Read the caveats — they are the truth.
 
-## The core math (do not forget this)
-P(pass) is **capped by the barrier ratio = drawdown_buffer / (buffer + profit_target)**
-(gambler's ruin). With no edge, **no sizing trick beats the ceiling.** You raise your
-odds only by: (1) picking a firm with a higher barrier ratio + forgiving rules, (2)
-sizing well enough to *reach* the ceiling (never trade timid), (3) taking multiple
-cheap-reset attempts: `P(>=1 pass in k) = 1-(1-p)^k`.
+## The premise you cannot escape
+There is NO validated trading edge on any data you can access (proven across SPY/QQQ,
+real NQ/ES futures, NQ/ES index CFDs 5.4y, BTC/ETH — HANDOFF 7-19). So this is a
+**probability + discipline** game, not a strategy. Two consequences:
+1. You can MAXIMISE the chance to pass and to extract a payout. You cannot make it
+   positive-EV. Most attempts lose the eval fee. You said you have no money — treat every
+   eval fee as money you can afford to lose, because you probably will.
+2. "Getting paid" is a **chain**, and each link is a fresh gamble with no edge:
 
-## Firm comparison (50k plans, researched May 2026 — VERIFY before paying)
-| Firm / plan | DD type | buffer | target | barrier | consistency | min/max days | eval $ | reset $ |
-|---|---|---|---|---|---|---|---|---|
-| **Bulenox Opt.1** | intraday-trail (BIG buffer) | $2,500 | $3,000 | **0.45** | none | 0 / none | $87 | $78 |
-| **Alpha Futures Zero** | EOD-lock @ start | $2,000 | $3,000 | 0.40 | none | 1 / none | $119 | $119 |
-| **Apex 4.0 EOD** | EOD-lock @ +$100 | $2,000 | $3,000 | 0.40 | none | 1 / 30d | ~$20 promo +$99 act | ~$20 |
-| Topstep | intraday-trail | $2,000 | $3,000 | 0.40 | **50% (hard)** | 0 / none | $49 | $49 |
-| Elite Trader STATIC | static (never trails) | $2,000 | $4,000 | 0.33 | none | 5 / none | $449 | — |
+```
+   P(pass eval)      ~30-44% per attempt (disciplined ceiling; real traders 5-20%)
+ × P(reach 1st payout on the FUNDED acct before breaching)   ~30-40%
+ × firm actually pays (policy + integrity)                   ~ok at Topstep/Apex
+ = P(eval fee -> a real payout)  ~ 8-15% optimal, ~5-6% realistically.
+```
+Topstep's own 2025 data: ~16.8% pass to funded, ~33% of funded ever get a payout →
+**~5-6% of all starters ever see a dollar.** That is the honest number.
 
-Avoid for pass-probability: Topstep (intraday + 50% consistency), Earn2Trade (10 min
-days, 30% consistency). "Lock" = floor trails by EOD then **freezes permanently** once
-you're ~$2,100 ahead — after that the eval is effectively cash-only (no trailing risk).
+## Which FIRM — ranked for PASS *and* getting PAID (not just pass-odds)
+Pass-odds alone says Bulenox (biggest buffer). But pass-odds ≠ get-paid. Verified:
 
-## Simulator results (E = -0.03R/trade = break-even after fees, disciplined sizing)
-Best achievable P(pass) per attempt ≈ the firm's barrier ratio:
-| Firm | barrier | sim P(pass)/attempt |
-|---|---|---|
-| Bulenox Opt.1 | 0.45 | **~44%** |
-| Alpha Zero / Apex EOD | 0.40 | **~32%** |
-| Topstep | 0.40 (intraday+consistency) | ~31% |
-| Elite static | 0.33 | ~29% |
+| Rank | Firm (50k) | Why | Watch out |
+|---|---|---|---|
+| **#1 Topstep** | EOD-trailing on BOTH eval *and* funded (no post-pass ambush); cleanest payouts; **no lifetime cap**; longest track record (pre-2015); Standard path = **no consistency rule** | $49/mo; 90/10 split; $30/payout; first payout capped ~$2k |
+| **#2 Apex 4.0 EOD** | **Cheapest to attempt** (~$20 promo evals → best for no money); **automated payouts via Deel (no human can deny)**; $598M+ paid; EOD funded DD | 6-payout lifetime cap (~$13k) then account closes; +$99 activation |
+| #3 Take Profit Trader | No consistency rule on funded | **Funded PRO = intraday-trailing (harder than eval)** — common post-pass blowup |
+| ⚠️ Bulenox | Highest raw pass-odds (big $2,500 buffer) | **Undocumented "flip-day" rule has denied rule-compliant payouts.** Secondary/test only |
+| Elite static | True static floor (never trails) | $4k target (ratio 0.33) + $449 → worse overall |
 
-Multi-attempt (Apex EOD, ~$20 promo resets, p≈0.32):
-| attempts | P(>=1 pass) | ~eval $ |
-|---|---|---|
-| 1 | 32% | $20 |
-| 3 | **69%** | ~$60 |
-| 5 | 85% | ~$100 |
-| 8 | 95% | ~$160 |
+**Your pick:** no money → **Apex 4.0 EOD** (cheap promo resets, automated payouts that
+can't be denied by a human, EOD funded). Want max payout integrity and can spend a bit →
+**Topstep**. Both are EOD on the funded account — that matters more than the eval.
+Bulenox: only as a cheap extra shot, knowing the flip-day risk.
 
-## The playbook (highest realistic chance)
-1. **Firm:** Bulenox Opt.1 for the single highest per-attempt odds (~44%, biggest buffer);
-   OR Apex 4.0 EOD for the best *cumulative* odds via cheap promo resets (~$20 each →
-   ~85% over 5 attempts for ~$100). Alpha Zero is the cleanest rule set.
-2. **Reach the lock/target fast:** size ~2-3% risk/trade (NOT timid — timid grinds you
-   out on the negative drift + time limit). On lock-plans, get ~+$2,100 ahead to freeze
-   the floor, then coast.
-3. **Enforce discipline:** run `risk_engine.py` (auto-size to the DD buffer, daily-loss
-   lockout, EOD-flat) so you actually hit the disciplined ceiling, not the 5-20% real rate.
-4. **Forward paper-test first:** log every paper trade with `journal.py` until you have a
-   stable break-even-or-better record BEFORE risking a real eval fee.
-5. **Buy the compounding math:** plan for several cheap-reset attempts, not one hero run.
+## Payout policy (verified — the part that turns variance into cash)
+| Firm | Min days (funded) | First withdrawal | Split | Funded DD | Consistency (funded) | Speed |
+|---|---|---|---|---|---|---|
+| Topstep | 5 winning days ($150+ each) | ~$2k cap 1st | 90/10 | EOD (no intraday trail) | Standard: none | next day (Wise) |
+| Apex EOD | 5 qualifying days ($250+ each) | $500 min; bal ≥ ~$52,100 | 100%→$25k then 90/10 | EOD | 50% best-day at payout | ~5 biz days (Deel) |
+| Take Profit | day 1 (after buffer) | bal ≥ ~$52k | 80/20 PRO | **intraday** | none | "fast" (unverified) |
+| Bulenox | 5 (funded)/10 (master) | $1,000 min | 100%→$10k then 90/10 | trailing | 40% + flip-day | weekly |
 
-## The brutal truth (do not let this regress)
-- This MAXIMISES P(pass); it does **not** create profit. Every pass is variance; expected
-  $ value is negative (eval fees + no edge).
-- Documented reality: ~5-20% first-attempt pass rate, only **~7% ever get a payout**
-  (FPFX 300k-account study). The sim's ~32-44% is the *disciplined ceiling* you only reach
-  by actually enforcing the rules; undisciplined trading collapses to 5-20%.
-- **Passing the eval is the easy hurdle.** The funded account is harder — Apex/TPT switch
-  to intraday-trailing on the funded (PA) account, plus payout ladders and consistency.
-  Most who pass still bleed the funded account out.
-- Rules change constantly (Apex 4.0 = March 2026, Alpha Zero = May 2026). Re-verify every
-  number on the firm's live rulebook before paying a cent.
+**Extract fast:** with no edge, the optimal funded play is hit the minimum-withdrawal
+threshold ASAP and WITHDRAW — don't "build the account," variance will take it back.
 
-Run it: `python eval_montecarlo.py` (or `--trials 50000` for tighter numbers).
+## Which MARKET to trade
+Futures (these are futures firms). Trade **micros** — they let you size to the small
+0.5-1% risk precisely. Tick values (CME): ES $12.50 · **MES $1.25** · NQ $5.00 · **MNQ $0.50**.
+
+- **MES (Micro S&P)** — DEFAULT. Smoother (40-80 pt RTH range), easier to stay inside
+  consistency + drawdown. Best for disciplined, rule-based trading.
+- **MNQ (Micro Nasdaq)** — finer ticks ($0.50) but ~2-4× the volatility (200-400 pt range).
+  Use only if your style is momentum/breakout and you widen stops accordingly.
+- Both: ~1-tick spreads, 4M+ contracts/day — plenty liquid.
+- **Session:** US RTH, especially the first 90-120 min (9:30-11:30 ET = **16:30-18:30 AST**).
+  Peak volume, tightest spreads. Flat by close — no overnight gap risk to your DD.
+
+## How OFTEN you'll trade
+- **2-5 trades/day**, only clean setups in the open window. No setup = no trade.
+- **~10-15 trading days** to reach the $3,000 (6%) target — NOT 5-6. The consistency rule
+  caps any single day's share of profit, so you must SPREAD gains across days. Rushing it
+  with one big day can breach consistency and void the payout. (10-15 days = community
+  consensus, unverified — no firm publishes it.)
+- So one attempt ≈ **2-3 weeks** of disciplined daily trading.
+
+## The playbook
+1. **Firm:** Apex 4.0 EOD (budget) or Topstep (integrity). Verify rules on the live
+   dashboard the day you buy — they change (Apex 4.0 is weeks old; Topstep changed splits
+   Jan 2026).
+2. **Market:** MES, US-open session, flat by close.
+3. **Size:** risk 0.5-1%/trade via `risk_engine.py` (auto-caps to the DD buffer). Reach
+   the lock/target in small steps; never oversize to chase.
+4. **Spread it:** 2-5 trades/day over ~2 weeks; keep any single day < ~40% of total profit.
+5. **Forward-test first:** run `funded_forward.py` on paper, log with `journal.py`, until
+   you have a stable record. If you can't pass on PAPER, do not pay for a live eval.
+6. **Attempts:** budget several cheap resets (Apex ~$20). P(≥1 pass in k) = 1-(1-p)^k.
+7. **Withdraw fast** once funded and past the threshold. Take the money and run.
+
+## Brutal caveats (do not skip)
+- **Not regulated.** No SIPC/FDIC. If the firm closes, you lose. Payouts are a private
+  company's promise.
+- **Firms profit from eval fees.** <10-20% ever get a payout; ~5-6% of starters at Topstep.
+  The business model is failure.
+- **Rules change without notice** and can be applied post-hoc (Bulenox flip-day).
+- **Passing ≠ keeping it.** The funded account is a second no-edge gauntlet; most who pass
+  still end with nothing.
+- **This maximises your CHANCE; it does not make money.** Expected value is negative.
+  With no money, the honest recommendation is: forward-test on PAPER for free, build the
+  discipline, and only ever risk an eval fee you are fully prepared to lose.
+
+Tools: `eval_montecarlo.py` (odds) · `funded_forward.py` (paper forward-test, risk-enforced)
+· `risk_engine.py` (sizing/limits, 61 tests) · `journal.py` (real track record).

@@ -197,7 +197,7 @@ def push_funded_plan() -> None:
     firm_key = _os.environ.get("FUNDED_FIRM", ff.DEFAULT_FIRM)
     cfg = ff.FIRMS.get(firm_key, ff.FIRMS[ff.DEFAULT_FIRM])
     acct = float(_os.environ.get("FUNDED_ACCOUNT", "50000"))
-    market = _os.environ.get("FUNDED_MARKET", "MNQ or MES (micro futures)")
+    market = _os.environ.get("FUNDED_MARKET", "MES micro S&P (or MNQ for momentum)")
     target = acct * cfg.profit_target_pct / 100.0
     buffer = acct * cfg.trailing_dd_pct / 100.0
     daily = acct * cfg.daily_loss_limit_pct / 100.0
