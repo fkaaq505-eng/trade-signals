@@ -248,15 +248,13 @@ def push_tjr_plan() -> None:
         return
     flat_ast = p["flat_by"].split(" / ")[1]
     lines = [
-        f"📋 TJR plan {p['symbol']} — paper, no proven edge, discipline play",
-        f"pools ({p['prior_day']}): PDH {p['pdh']} · PDL {p['pdl']} · now {p['last']}",
-        f"size {p['contracts']} {p['symbol']} = ${p['risk_dollars']:,.0f} risk · stop {p['stop_pts']}pts · R:R ~{p['rr']}:1",
-        f"🔴 raid ABOVE {p['pdh']} + bearish FVG → SHORT, stop {p['short']['stop']}, target {p['pdl']}",
-        f"🟢 raid BELOW {p['pdl']} + bullish FVG → LONG, stop {p['long']['stop']}, target {p['pdh']}",
-        f"one setup/day · NO raid+FVG = NO trade · flat by {flat_ast}",
-        "⚠️ no edge — funded-legal discipline only. Log it: journal.py",
+        f"{p['symbol']} · {p['contracts']} contracts (${p['risk_dollars']:,.0f} risk) · flat {flat_ast}",
+        f"🟢 BUY {p['pdl']}  →  TP {p['pdh']}  ·  SL {p['long']['stop']}",
+        f"🔴 SELL {p['pdh']}  →  TP {p['pdl']}  ·  SL {p['short']['stop']}",
+        "set both as bracket orders — only the price hit fills.",
+        "paper · no proven edge · not advice",
     ]
-    push(f"TJR plan {p['symbol']} {datetime.now(ET).date()}", "\n".join(lines), tags="clipboard")
+    push(f"{p['symbol']}: BUY {p['pdl']} / SELL {p['pdh']}", "\n".join(lines), tags="chart_with_upwards_trend")
 
 
 def main() -> None:
