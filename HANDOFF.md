@@ -130,6 +130,15 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
     (+10.8%). Lesson (the project's core rule, now demonstrated): win rate ≠ money;
     none is a proven edge on free data. Stop chasing accuracy — chase validated
     positive expectancy (needs real multi-year intraday data) or keep `meanrev`.
+11. **Intraday OUT-OF-SAMPLE test — DEFINITIVE NO EDGE (`intraday_oos.py`).** Ran on
+    the deepest keyless intraday data (1h SPY, ~2y), train older 70% / test recent
+    30%. Every strategy that was profitable in-sample (RSI2 +10%, Bollinger +3%)
+    went NEGATIVE out-of-sample (−3.1%, −0.8%, etc.) while OOS buy-hold made +20.7%.
+    The in-sample edges were overfit and died on unseen data. Conclusion: there is
+    NO validated funded/intraday edge obtainable on free data — not ORB, RSI2, VWAP,
+    or Bollinger. A real search needs years of 5m/1m bars via CSV (Alpaca/Polygon),
+    and the strong prior is it still won't beat buy-hold. The honest funded takeaway
+    is the research one: success is risk discipline, not a strategy we can hand over.
 
 ---
 
