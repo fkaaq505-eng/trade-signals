@@ -152,38 +152,30 @@ def push_orb_plan() -> None:
 
     risk_usd = ACCOUNT * RISK_PCT / 100.0
     shares = risk_usd / plan["range"]
-    exit_str = _et_ast(plan["date"], 15, 55)
+    close_ast = _et_ast(plan["date"], 15, 55).split(" / ")[1]   # just '22:55 AST'
 
     lines = [
-        f"📋 SPY ORB — {plan['date']} · {label}   (PAPER · no proven edge · not advice)",
-        f"now: {label} ≈ {spy_last * ratio:,.0f}  (SPY {spy_last:.2f})",
-        f"opening range = first 30m after the open ({_et_ast(plan['date'], 9, 30)}):",
-        f"  {sp(plan['or_low'])}–{sp(plan['or_high'])}  (SPY {plan['or_low']}–{plan['or_high']})",
+        f"📋 SPY day-trade — {plan['date']} ({label}) · paper, not advice",
+        f"{label} now ≈ {spy_last * ratio:,.0f}",
     ]
 
-    def bracket(emoji: str, side: str, entry: float, stop: float, target: float) -> list[str]:
-        verb = "buy" if side == "LONG" else "sell"
+    def block(emoji: str, action: str, entry: float, stop: float, target: float) -> list[str]:
+        direction = "above" if action == "BUY" else "below"
         return [
-            f"{emoji} {side} — place ONE bracket order now, then walk away:",
-            f"  ENTRY  stop-{verb} {sp(entry)}  (SPY {entry})",
-            f"  STOP   {sp(stop)}  (SPY {stop})   = 1R",
-            f"  TARGET {sp(target)}  (SPY {target})   = +{RR}R",
-            f"  SIZE   ~{shares:.0f} SPY shares  (1% = ${risk_usd:,.0f} risk)",
-            f"  EXIT   flat by {exit_str} if neither hits",
+            f"{emoji} {action} if it breaks {direction} {sp(entry)}  (SPY {entry})",
+            f"   safety exit: {sp(stop)}  (SPY {stop})",
+            f"   take profit: {sp(target)}  (SPY {target})",
+            f"   ~{shares:.0f} SPY shares (${risk_usd:,.0f} risk) · close by {close_ast}",
         ]
 
     if plan["long_ok"]:
-        lines += bracket("🟢", "LONG", plan["or_high"], plan["or_low"], plan["long_target"])
+        lines += block("🟢", "BUY", plan["or_high"], plan["or_low"], plan["long_target"])
     if plan["short_ok"]:
-        lines += bracket("🔴", "SHORT", plan["or_low"], plan["or_high"], plan["short_target"])
-    skipped = [s for s, ok in (("LONG", plan["long_ok"]), ("SHORT", plan["short_ok"])) if not ok]
-    if skipped:
-        lines.append(f"({'/'.join(skipped)} skipped today — trend filter)")
+        lines += block("🔴", "SELL/short", plan["or_low"], plan["or_high"], plan["short_target"])
 
     lines += [
-        "how: one OCO/bracket order (stop-entry + attached SL + TP). Your broker fills",
-        "and manages it — no chart-watching. Cancel it if unfilled by the close.",
-        "⚠️ ORB has NO proven edge · PAPER only · you place the order, not me",
+        "No breakout = no trade. Set as ONE broker order — it runs without you.",
+        "⚠️ no proven edge · paper only · you place it, not me",
     ]
     push(f"SPY ORB plan {plan['date']}", "\n".join(lines), tags="clipboard")
 
