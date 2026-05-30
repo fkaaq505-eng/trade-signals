@@ -59,7 +59,9 @@ def main() -> None:
           f"hard stop + EOD-flat) ===")
     print(f"train < {str(split_ts)[:10]}  |  OOS held-out >= that  |  "
           f"OOS buy_hold {oos_bh:+.1f}%")
-    print("*** ~2y / one regime — honest but not conclusive (need years of 5m via CSV) ***\n")
+    note = (f"*** {len(df):,} bars over ~{span/365:.1f}y of REAL data ***" if src
+            else "*** ~2y / one regime free Yahoo data — not conclusive ***")
+    print(note + "\n")
     print(f"{'strategy':<14}{'IS_win%':>8}{'IS_exp%':>8}{'IS_net%':>8} | "
           f"{'OOS_win%':>9}{'OOS_exp%':>9}{'OOS_net%':>9}")
     print("-" * 70)

@@ -57,8 +57,10 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `sweep.py` (param search) · `compare.py` (strategy bake-off) ·
 `walkforward.py` (out-of-sample validation) · `vixtest.py` (VIX-regime experiment) ·
 `funded.py` (prop MAE/drawdown reality check) · `fundeval.py` (eval pass/fail sim) ·
-`funded_intraday.py` (intraday hard-stop + EOD-flat structure) ·
-`data_csv.py` (load OHLCV from a CSV — TradingView export / Alpaca / Polygon) ·
+`funded_intraday.py` (intraday hard-stop + EOD-flat) · `orb.py` (Opening Range
+Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
+`intraday_oos.py` (intraday out-of-sample test) · `data_csv.py` (load OHLCV CSV) ·
+`alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
 
 ## Next steps (in order)
@@ -139,12 +141,34 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
     or Bollinger. A real search needs years of 5m/1m bars via CSV (Alpaca/Polygon),
     and the strong prior is it still won't beat buy-hold. The honest funded takeaway
     is the research one: success is risk discipline, not a strategy we can hand over.
+12. **REAL 5-min data tested — FINAL: NO EDGE (`alpaca_fetch.py`).** Installed the
+    Alpaca CLI (`brew install alpacahq/tap/cli`, auth via `alpaca profile login`,
+    paper/OAuth, READ-ONLY data use only), pulled **114,388 real SPY 5-minute bars
+    (2021–2026, ~5.4y)** and ran `intraday_oos.py spy_5m.csv`. Result: ALL four
+    strategies LOSE in-sample AND out-of-sample (RSI2 −25%/−14%, VWAP −7%/−2%, etc.)
+    while OOS buy-hold made +32%. Root cause: gross per-trade edge ≈0.01% < ≈0.02%
+    round-turn cost → **intraday SPY mean reversion is a structural loser after fees.**
+    Conclusion is now settled on real, deep, out-of-sample data: there is no funded
+    intraday edge here. Re-pull data: `python alpaca_fetch.py SPY 5Min 2021-01-01
+    spy_5m.csv` (CSVs are gitignored). NEVER run alpaca trading/position/--live cmds.
 
 ---
 
 ### Opening prompt for the new account
 > Continue my trading-signals project. Clone https://github.com/fkaaq505-eng/trade-signals
-> (gh authed as fkaaq505-eng), read HANDOFF.md, and confirm the SPY meanrev signal +
-> the phone notifier still work. I'm in Saudi time (AST). Keep it free, paper-only,
-> and stay brutally honest about performance — no fake win-rate tricks. ntfy topic is
-> nema-sig-401eccea14. Don't touch the Obsidian vault or other Nema files.
+> (gh authed as fkaaq505-eng), `python3 -m venv .venv && .venv/bin/python -m pip install
+> -r requirements.txt`, then read HANDOFF.md FULLY before doing anything. Confirm the
+> SPY meanrev signal still runs: `.venv/bin/python cli.py both --strategy meanrev`.
+>
+> STATE (May 2026): The DAILY SPY meanrev strategy is the only validated edge (82% win,
+> walk-forward-confirmed 78% out-of-sample) — keep it; it's what the phone notifier
+> pushes. The FUNDED/prop-account investigation is COMPLETE and the answer is NO EDGE:
+> ORB, intraday RSI2, VWAP, Bollinger were all tested out-of-sample on real Alpaca
+> 5-minute data (~5.4y) and ALL lose money vs buy-hold (gross edge < fees). Don't redo
+> that or chase "more accurate" — it's the win-rate trap; see HANDOFF items 7–12.
+>
+> Rules: free + paper-only, NEVER place real orders (the Alpaca CLI is installed but is
+> for READ-ONLY data pulls only — never trading/position/--live). Be brutally honest, no
+> fake win-rate tricks. I'm in Saudi time (AST). ntfy topic nema-sig-401eccea14. Don't
+> touch the Obsidian vault or other Nema files. Data CSVs are gitignored; re-pull with
+> `python alpaca_fetch.py SPY 5Min 2021-01-01 spy_5m.csv` (needs `alpaca profile login`).
