@@ -17,6 +17,7 @@ stop = range opposite side, R:R target, flat by close, fixed % risk per trade).
 from __future__ import annotations
 
 import sys
+from dataclasses import dataclass
 
 from data import fetch
 from data_csv import load_csv
@@ -34,8 +35,19 @@ def _bar_minutes(idx) -> int:
     return max(1, int(secs // 60))
 
 
-def backtest_orb(df):
-    """One ORB trade per day. Returns (list of R-multiples, today's plan dict)."""
+@dataclass(frozen=True)
+class OrbTrade:
+    """One day's ORB result. r = gross R-multiple (before fees); rng = the opening
+    range in price points = exactly 1R of risk (entry to stop)."""
+    date: str
+    side: str          # "long" | "short"
+    r: float
+    entry: float
+    rng: float
+
+
+def _run(df):
+    """Core ORB sim: one trade/day. Returns (list[OrbTrade], today's plan dict)."""
     step = _bar_minutes(df.index)
     or_bars = max(1, OR_MINUTES // step)
     by_day = {}
@@ -62,13 +74,26 @@ def backtest_orb(df):
                 "short_target": round(or_low - RR * rng, 2)}
 
         if rng > 0:
-            results.append(_simulate_day(bars[or_bars:], or_high, or_low, rng, long_ok, short_ok))
+            trade = _simulate_day(day, bars[or_bars:], or_high, or_low, rng, long_ok, short_ok)
+            if trade is not None:
+                results.append(trade)
         prev_close = bars[-1][1]["Close"]
 
-    return [r for r in results if r is not None], plan
+    return results, plan
 
 
-def _simulate_day(rest, or_high, or_low, rng, long_ok, short_ok):
+def backtest_orb(df):
+    """Back-compat shape: (list of gross R-multiples, today's plan dict)."""
+    results, plan = _run(df)
+    return [t.r for t in results], plan
+
+
+def backtest_orb_records(df):
+    """Detailed shape for OOS + fee analysis: (list[OrbTrade], today's plan dict)."""
+    return _run(df)
+
+
+def _simulate_day(day, rest, or_high, or_low, rng, long_ok, short_ok):
     side = entry = stop = target = None
     for _, b in rest:
         hi, lo, close = float(b["High"]), float(b["Low"]), float(b["Close"])
@@ -80,18 +105,19 @@ def _simulate_day(rest, or_high, or_low, rng, long_ok, short_ok):
             continue
         if side == "long":
             if lo <= stop:
-                return -1.0
+                return OrbTrade(str(day), side, -1.0, entry, rng)
             if hi >= target:
-                return RR
+                return OrbTrade(str(day), side, RR, entry, rng)
         else:
             if hi >= stop:
-                return -1.0
+                return OrbTrade(str(day), side, -1.0, entry, rng)
             if lo <= target:
-                return RR
+                return OrbTrade(str(day), side, RR, entry, rng)
     if side is None:
         return None                      # no breakout that day -> no trade
     last = float(rest[-1][1]["Close"])   # EOD-flat at the close
-    return ((last - entry) if side == "long" else (entry - last)) / rng
+    r = ((last - entry) if side == "long" else (entry - last)) / rng
+    return OrbTrade(str(day), side, r, entry, rng)
 
 
 def main() -> None:

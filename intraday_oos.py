@@ -29,6 +29,7 @@ CANDIDATES = [
     ("RSI2 tighter", "meanrev", 0.5),
     ("VWAP 1h", "vwap", 1.0),
     ("Bollinger 1h", "bb", 1.0),
+    ("EMA trend", "trend", 1.2),   # momentum/breakout family (not just mean reversion)
 ]
 
 
