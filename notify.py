@@ -49,6 +49,9 @@ STRATEGY = os.environ.get("STRATEGY", "meanrev")
 SL_MULT = ATR_SL_MULT if STRATEGY == "trend" else 0.0
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
 NTFY_SERVER = os.environ.get("NTFY_SERVER", "https://ntfy.sh")
+# Paper position sizing (no stop -> size by % of account). Override via env.
+PAPER_ACCOUNT = float(os.environ.get("PAPER_ACCOUNT", "10000"))   # paper account size, $
+ALLOC_PCT = float(os.environ.get("ALLOC_PCT", "20"))             # % of account per BUY
 
 WINDOW = {"meanrev": ("12y", "1d"), "bb": ("12y", "1d"), "trend": ("730d", "1h")}
 EMOJI = {"BUY": "\U0001F7E2", "SELL/EXIT": "\U0001F534", "HOLD": "⚪"}
@@ -200,20 +203,21 @@ def main() -> None:
     actionable = any(s.action != "HOLD" for _, s in sigs)
     events = high_impact_events(datetime.now(ET).date())
 
-    # Short, scannable body: one line per symbol, optional event flag + 1 headline.
+    # Body shows ONLY the markets to ACT on (BUY/EXIT). HOLDs are hidden so the
+    # message is just "what to trade". Each BUY shows how many units to buy.
+    actionable_sigs = [(sym, s) for sym, s in sigs if s.action != "HOLD"]
     lines = []
-    for sym, s in sigs:
-        line = (f"{EMOJI.get(s.action, '')} {PHRASE.get(s.action, s.action)} — "
-                f"{sym} ${s.price}{index_context(sym)}")
-        if s.suggested_stop is not None:
-            line += f"  · stop {s.suggested_stop}"   # only the trend strategy sets one
-        lines.append(line)
-        # How to act in a paper account (TradingView etc.): mean reversion has no
-        # price SL/TP — exit is the next SELL signal or the time stop.
+    if not actionable_sigs:
+        lines.append("✅ All HOLD — nothing to trade today.")
+    for sym, s in actionable_sigs:
+        lines.append(f"{EMOJI.get(s.action, '')} {PHRASE.get(s.action, s.action)} — "
+                     f"{sym} ${s.price}{index_context(sym)}")
         if s.action == "BUY" and STRATEGY != "trend":
-            lines.append("   → buy · no SL/TP · exit on my SELL alert (RSI2>75) or ~10 trading days")
+            units = int(PAPER_ACCOUNT * ALLOC_PCT / 100.0 / s.price) if s.price > 0 else 0
+            lines.append(f"   → BUY ~{units} units (~{ALLOC_PCT:.0f}% of ${PAPER_ACCOUNT:,.0f}) · "
+                         f"no SL/TP · sell on my EXIT alert")
         elif s.action == "SELL/EXIT":
-            lines.append("   → close the long now (take-profit, not a short)")
+            lines.append("   → SELL all your units now (take-profit, not a short)")
     if events:
         lines.append("⚠️ " + events[0] + " — expect whipsaw")
     heads = fetch_headlines(SYMBOLS, limit=1)
@@ -222,13 +226,14 @@ def main() -> None:
     lines.append("not advice · paper only")
     body = "\n".join(lines)
 
+    n_act = len(actionable_sigs)
     if len(sigs) == 1:
         sym, s = sigs[0]
         title = f"{sym} {PHRASE.get(s.action, s.action)}"   # plain text (HTTP header = latin-1)
         tags = TAGS.get(s.action, "chart_with_upwards_trend")
     else:
-        title = "Morning brief" if brief else "Signals"
-        tags = "chart_with_upwards_trend"
+        title = f"{n_act} to trade" if n_act else "All HOLD — nothing to do"
+        tags = "green_circle" if n_act else "white_circle"
 
     # Push on an actionable signal, on a brief, OR when a high-impact event lands.
     if actionable or brief or events:
