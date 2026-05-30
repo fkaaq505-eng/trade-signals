@@ -77,12 +77,37 @@ def index_context(sym: str) -> str:
         return "  ·  ETF priced at ~1/10 of its index"
 
 
+def _index_ratio(sym: str, etf_price: float) -> tuple[float, str]:
+    """(ratio, label) to convert ETF prices into index points — e.g. SPY ~756 ->
+    S&P 500 ~7,560. Best-effort: a failed fetch falls back to SPY's ~10x ratio so the
+    alert still shows sensible 'thousands' levels rather than breaking."""
+    mapping = INDEX_FOR.get(sym.upper())
+    if not mapping or etf_price <= 0:
+        return 1.0, sym.upper()
+    ticker, label = mapping
+    try:
+        level = float(fetch(ticker, "5d", "1d")["Close"].iloc[-1])
+        return level / etf_price, label
+    except Exception:
+        return 10.0, label   # SPY trades ~1/10 of the S&P 500; safe fallback
+
+
 def near_us_close() -> bool:
     """True on a weekday within ~15:25-16:05 ET. Auto-handles DST when the cron
     is scheduled at both candidate UTC times — only the right one lands here."""
     now = datetime.now(ET)
     minutes = now.hour * 60 + now.minute
     return now.weekday() < 5 and (15 * 60 + 25) <= minutes <= (16 * 60 + 5)
+
+
+def near_us_open() -> bool:
+    """True on a weekday within ~9:55-10:45 ET — just after the 30-min opening range
+    forms, the start of ORB's prime session. Dual UTC crons (DST) → only the in-season
+    one lands here; the other fires at 9:00 or 11:00 ET and is skipped, so ORB pushes
+    exactly once per trading day."""
+    now = datetime.now(ET)
+    minutes = now.hour * 60 + now.minute
+    return now.weekday() < 5 and (9 * 60 + 55) <= minutes <= (10 * 60 + 45)
 
 
 def push(title: str, body: str, tags: str = "chart_with_upwards_trend") -> None:
@@ -102,19 +127,31 @@ def push(title: str, body: str, tags: str = "chart_with_upwards_trend") -> None:
 def push_orb_plan() -> None:
     """Funded mode: push today's Opening Range Breakout PLAN + risk guardrails.
     Framed as a disciplined plan, NOT a predicted winner (ORB has no proven edge —
-    see FUNDED.md). Schedule the cron ~30min after the US open so the range exists."""
-    from orb import ACCOUNT, RISK_PCT, backtest_orb
-    _, plan = backtest_orb(fetch("SPY", "60d", "15m"))
+    see FUNDED.md). Fires ~30min after the US open (near_us_open) so the range exists.
+    Levels are shown in S&P 500 index points (the 'thousands' an ES/MES funded trader
+    watches), with the SPY ETF price in brackets."""
+    from orb import ACCOUNT, RISK_PCT, RR, backtest_orb
+    df = fetch("SPY", "60d", "15m")
+    _, plan = backtest_orb(df)
     if not plan or not plan["range"]:
         print("No ORB plan available yet (range not formed).")
         return
+    spy_last = float(df["Close"].iloc[-1])
+    ratio, label = _index_ratio("SPY", spy_last)
+
+    def sp(price: float) -> str:               # SPY price -> index points, e.g. 7,579
+        return f"{price * ratio:,.0f}"
+
     shares = (ACCOUNT * RISK_PCT / 100.0) / plan["range"]
-    lines = [f"📋 SPY ORB plan — {plan['date']}  ·  S&P 500 ETF",
-             f"opening range {plan['or_low']}–{plan['or_high']} (={plan['range']})"]
+    lines = [f"📋 SPY ORB plan — {plan['date']}  ·  {label}",
+             f"opening range {sp(plan['or_low'])}–{sp(plan['or_high'])} {label} pts "
+             f"(SPY {plan['or_low']}–{plan['or_high']})"]
     if plan["long_ok"]:
-        lines.append(f"🟢 LONG stop-buy >{plan['or_high']} · stop {plan['or_low']} · tgt {plan['long_target']}")
+        lines.append(f"🟢 LONG entry >{sp(plan['or_high'])} · SL {sp(plan['or_low'])} "
+                     f"· TP {sp(plan['long_target'])}  (+{RR}R)")
     if plan["short_ok"]:
-        lines.append(f"🔴 SHORT stop-sell <{plan['or_low']} · stop {plan['or_high']} · tgt {plan['short_target']}")
+        lines.append(f"🔴 SHORT entry <{sp(plan['or_low'])} · SL {sp(plan['or_high'])} "
+                     f"· TP {sp(plan['short_target'])}  (+{RR}R)")
     lines += [f"size 1% risk ≈ {shares:.0f} SPY shares  ·  FLAT by close (no overnight)",
               "rules: ≤3 trades, stop ALWAYS, don't rush the target",
               "⚠️ a PLAN not a prediction · ORB has no proven edge · paper/funded · not advice"]
@@ -124,8 +161,11 @@ def push_orb_plan() -> None:
 def main() -> None:
     force = "--force" in sys.argv
     brief = "--brief" in sys.argv
-    if STRATEGY == "orb":          # funded mode: daily plan, own cron timing
-        push_orb_plan()
+    if STRATEGY == "orb":          # funded mode: ORB plan at the open (own cron)
+        if force or near_us_open():
+            push_orb_plan()
+        else:
+            print("Not in the US-open window; skipping (use --force to test).")
         return
     if not force and not near_us_close():
         print("Not in the US-close window; skipping (use --force to test).")

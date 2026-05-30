@@ -1,0 +1,39 @@
+name: orb-plan-notify
+
+# Pushes the daily Opening Range Breakout (ORB) PLAN for SPY (S&P 500) via ntfy,
+# on GitHub's free servers so it works with your laptop closed. It never trades;
+# it sends a disciplined plan with entry/SL/TP and risk guardrails.
+#
+# *** ORB has NO validated edge (it loses out-of-sample on real 5m data after fees,
+#     see FUNDED.md / orb_oos.py). This push is for PAPER forward-testing + discipline
+#     practice only. The validated daily meanrev signal still runs in signal.yml. ***
+#
+# Timed to ORB's prime session — the US open. Fires ~30 min after 9:30 ET, once the
+# opening range has formed. Dual UTC crons cover DST; notify.py's near_us_open() gate
+# lets only the in-season one through, so you get exactly one plan per trading day.
+
+on:
+  schedule:
+    - cron: "0 14 * * 1-5"   # 10:00 ET during EDT (summer)
+    - cron: "0 15 * * 1-5"   # 10:00 ET during EST (winter)
+  workflow_dispatch: {}        # manual run from the Actions tab (forces a push now)
+
+jobs:
+  orb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Push ORB plan
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          STRATEGY: orb
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python notify.py --force
+          else
+            python notify.py
+          fi
