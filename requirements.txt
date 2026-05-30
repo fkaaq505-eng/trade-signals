@@ -1,3 +1,5 @@
 yfinance>=0.2.40
 pandas>=2.2
 numpy>=1.26
+requests>=2.31          # crypto_fetch.py (Binance/Coinbase/Kraken public APIs)
+dukascopy-python>=4.0   # futures_fetch.py (free index-CFD history, no account)

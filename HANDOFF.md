@@ -269,6 +269,47 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
     a profitable intraday signal may simply not exist on accessible data — if the OOS
     tests say so, SAY SO. Do not sell hope. The validated daily meanrev (15-ETF basket)
     stays the user's PERSONAL-account tool; it is NOT funded-legal (overnight + no stop).
+19. **THE FUNDED QUEST EXECUTED — all 3 frontiers tested, SETTLED (3 parallel sub-agents,
+    2026-05-30).** Item 18's three "genuinely unexplored" avenues are now done, free ($0 —
+    user has no money; Databento declined). Verdict: **no strategy edge anywhere; the only
+    real deliverable is the risk engine.** Independently re-verified each agent's numbers.
+    - **(A) REAL FUTURES — `futures_fetch.py`, `tjr_futures.py`, `FUTURES_FINDINGS.md`.**
+      Got real instruments FREE: Yahoo NQ=F/ES=F 1h (~2.4y), and **Dukascopy index CFDs**
+      (`dukascopy-python`, free `freeserv.dukascopy.com`, no account) — E_NQ-100 + E_SandP-500
+      **5m, 5.4y, ~370k bars each** + 1h. TJR FVG run on REAL ICT session pools (Asia/London/NY,
+      prior-day session H/L — no look-ahead, verified) on the actual instrument + 23h hours.
+      Result: every model NEGATIVE OOS after fees EXCEPT Duka-CFD TJR showed OOS +0.115R(ES)/
+      +0.049R(NQ) — SCRUTINIZED + REJECTED: t-stat 0.84/0.37 (insignificant, need >2), OOS
+      thirds DECAY +0.19→+0.34→−0.19 (ES) / +0.47→+0.01→−0.34 (NQ), last 60 trades −0.36/−0.45R.
+      Dead/regime-luck signal, negative in the recent window (= same disease as ORB item 13).
+      The instrument-and-hours gap is closed: real NQ/ES + real sessions = same NO EDGE as the
+      SPY/QQQ proxy. (Fees: NQ 1.75pt RT, ES 0.50pt RT, CFD 3bps RT.)
+    - **(B) CRYPTO — `crypto_fetch.py`, `tjr_crypto.py`, `ict_sweep_crypto.py`, `orb_crypto.py`,
+      `engine_crypto.py`, `CRYPTO_FINDINGS.md`.** Binance public klines (keyless), **BTC+ETH 5m,
+      2023–2026, ~358k bars each.** TJR FVG on REAL Asia/London/NY UTC session pools (the model's
+      native 24h market) + ICT sweep + ORB: ALL negative OOS after 10bps/side taker. The 24h-market
+      hypothesis is FALSIFIED — fails on the actual 24h instrument too. One trap caught: engine
+      RSI2/BB/trend on crypto showed +OOS R BUT it's a risk-weighting illusion (+0.095R while
+      −0.19%/trade) AND a same-bar-close fill artifact (next-bar-open fill, verified, stays negative).
+      Fixed `engine_crypto.py` to print net_exp% beside net_expR so the "R-positive/money-negative"
+      illusion is visible in the tool, not just the doc.
+    - **(C) RISK / DISCIPLINE ENGINE — `risk_engine.py`, `test_risk_engine.py`, `fundeval_live.py`.
+      THE deliverable.** Immutable state machine that ENFORCES prop rules (paper-only, never orders):
+      auto position-size capped to MIN(DD-buffer, risk%≈0.5–1%); daily-loss lockout; max-trades/day;
+      mandatory EOD-flat; **Apex intraday-trailing vs Topstep EOD-trailing** modes; consistency-rule
+      tracker; profit-pace. Presets APEX_50K/100K (2.5% trail), TOPSTEP_50K/100K (4% trail) — defaults,
+      verify vs live rulebook. `can_enter/register_fill/register_close/on_new_day/must_flatten` API.
+      **61/61 unit tests pass** (stdlib unittest: `python test_risk_engine.py`). `fundeval_live.py
+      --compare [--firm topstep]` runs the meanrev stream through the guardrail: disciplined sizing
+      survives the worst −11% MAE trade that naive 20% sizing nearly blows — but daily meanrev is
+      ~7 trades/yr, far too slow for a 30-day clock, so it's STILL not funded-legal. The engine does
+      NOT create an edge; it preserves capital + enforces discipline on whatever instrument has one.
+    - **BOTTOM LINE (do not regress):** across every funded-legal strategy × every accessible free
+      market/instrument/timeframe (SPY/QQQ 5m, NQ/ES futures 1h, NQ/ES index CFDs 5m 5.4y, BTC/ETH
+      5m) — NO validated, statistically-significant, time-stable, post-fee, OOS positive expectancy
+      exists. The honest path to passing a funded eval is IRON RISK DISCIPLINE (the engine), applied
+      to a tested instrument, accepting that most attempts fail regardless. Not a magic signal — there
+      isn't one on free data. Big data CSVs are gitignored; re-pull via `futures_fetch.py`/`crypto_fetch.py`.
 
 ---
 
