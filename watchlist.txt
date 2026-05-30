@@ -1,27 +1,4 @@
 # Symbols the notifier watches (one per line). Edit + push to change.
-# Wide meanrev basket: max signal frequency WHILE keeping an edge. Each backtested
-# 12y on the validated Connors RSI2 config (max_hold=240, event filter on) and passed
-# win>=68% AND net-positive. Avg ~0.5 signals/trading-day (~2-3/week) but LUMPY:
-# correlated names cluster BUY signals on selloff days, nothing on calm/up days.
-# Mean reversion can't fire every day (it needs a dip). HYG/bonds decorrelate a bit.
-# High-drawdown names (size small): KRE, IWM, XOP, SMH, SOXX. Trim for fewer/cleaner.
+# S&P 500 only (SPY) — the user trades the S&P 500. Highest win rate + lowest
+# drawdown of all the indices. One symbol = short alert.
 SPY
-QQQ
-DIA
-IWM
-MDY
-XLK
-XLY
-XLI
-XLV
-XLP
-XLC
-SMH
-SOXX
-IGV
-XOP
-KRE
-HYG
-EEM
-EWG
-INDA
