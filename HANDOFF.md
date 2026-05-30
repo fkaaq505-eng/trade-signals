@@ -63,11 +63,13 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
 `intraday_oos.py` (intraday OOS test, incl EMA-trend) · `orb_oos.py` (ORB OOS on real
 5m, RTH-filtered, fee-in-R) · `ict_sweep.py` (ICT/TJR sweep-reversal OOS test, no edge) ·
 `journal.py` (log YOUR paper trades → real win/expectancy/net-after-fees, any strat) ·
+`autojournal.py` (system auto-logs ORB TP/SL/EOD outcomes → `journal_orb.csv`) ·
 `data_csv.py` (load OHLCV CSV) ·
 `alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup) ·
 `.github/workflows/signal.yml` (meanrev cron, the validated edge) ·
-`.github/workflows/orb.yml` (ORB paper-plan cron, 10:00 ET, no edge).
+`.github/workflows/orb.yml` (ORB paper-plan cron, 10:00 ET, no edge) ·
+`.github/workflows/autojournal.yml` (post-close cron, auto-logs ORB outcome, commits record).
 
 ## Next steps (in order)
 1. **Walk-forward validation — DONE (`walkforward.py`).** Verdict: **not overfit.**
@@ -195,6 +197,17 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
     --strat meanrev --symbol SPY --side long --entry 756.5 --exit 761.2 --size 100`,
     then `python journal.py stats [--strat X]`. Rule printed: expectancy>0 AND PF>~1.3
     over 30+ trades = real edge; high win% + negative expectancy = the win-rate trap.
+15. **Auto-journal — DONE (`autojournal.py`, `.github/workflows/autojournal.yml`).**
+    The system logs its OWN ORB outcomes: each completed day it replays the ORB plan,
+    checks the real bars for TARGET / STOP / EOD-flat, and appends the realized trade
+    (1%-risk sizing, fees) to `journal_orb.csv`. Idempotent (dedup by date; today only
+    after post-close 21:00 UTC). New `autojournal.yml` cron runs 21:30 UTC (post-close)
+    and COMMITS `journal_orb.csv` back via the built-in `GITHUB_TOKEN` (`permissions:
+    contents: write`) so the record persists — a hands-off forward paper-test. NOTE:
+    `journal_orb.csv` is the only CSV un-gitignored (`!journal_orb.csv`); the manual
+    `journal.csv` stays private/local. Backfilled 46 days on first run: 41% win,
+    −$1,793, PF 0.87 — confirms ORB has no edge live, exactly as the OOS tests said.
+    View: `python journal.py --file journal_orb.csv stats --strat orb`.
 
 ---
 

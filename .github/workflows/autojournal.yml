@@ -1,0 +1,36 @@
+name: auto-journal-orb
+
+# After the US close, replay the day's ORB plan, check whether price hit the
+# target / stop / neither, and append the realized trade to journal_orb.csv —
+# a real, hands-off forward paper-test of the (no-backtested-edge) ORB push.
+# Commits the record back so it persists across runs (private repo).
+
+on:
+  schedule:
+    - cron: "30 21 * * 1-5"   # 21:30 UTC = 17:30 ET (EDT) / 16:30 ET (EST), post-close both
+  workflow_dispatch: {}
+
+permissions:
+  contents: write             # allow the bot to commit journal_orb.csv back
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python autojournal.py
+      - name: commit the journal if it changed
+        run: |
+          git config user.name "auto-journal"
+          git config user.email "github-actions@users.noreply.github.com"
+          if ! git diff --quiet -- journal_orb.csv; then
+            git add journal_orb.csv
+            git commit -m "chore: auto-journal ORB outcome [skip ci]"
+            git push
+          else
+            echo "no new ORB trade to log today"
+          fi

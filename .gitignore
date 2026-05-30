@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .DS_Store
 *.csv
+# auto-journal forward-test record IS tracked; manual journal.csv stays private
+!journal_orb.csv
