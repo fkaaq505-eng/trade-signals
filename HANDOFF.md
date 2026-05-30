@@ -61,7 +61,8 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `funded_intraday.py` (intraday hard-stop + EOD-flat) · `orb.py` (Opening Range
 Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
 `intraday_oos.py` (intraday OOS test, incl EMA-trend) · `orb_oos.py` (ORB OOS on real
-5m, RTH-filtered, fee-in-R) · `data_csv.py` (load OHLCV CSV) ·
+5m, RTH-filtered, fee-in-R) · `ict_sweep.py` (ICT/TJR sweep-reversal OOS test, no edge) ·
+`data_csv.py` (load OHLCV CSV) ·
 `alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
 `data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup) ·
 `.github/workflows/signal.yml` (meanrev cron, the validated edge) ·
