@@ -43,11 +43,12 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
   (AST); real brokerages need 18+, so paper is the right path regardless.
 
 ## Known loose ends
-- **Workflow edits need `workflow` OAuth scope.** The bundled gh token can push
-  normal code but NOT `.github/workflows/*`. To change the workflow (e.g. bump
-  actions to v6, or change schedule): `gh auth refresh -h github.com -s workflow`
-  then push. The symbol pick is done via `watchlist.txt` precisely to avoid
-  needing this.
+- **Pushing `.github/workflows/*`.** git's default HTTPS credential here is an OAuth
+  App token WITHOUT `workflow` scope, so a plain `git push` that touches a workflow is
+  rejected. BUT the `gh` keyring token (fkaaq505-eng) already HAS `workflow` scope — no
+  `gh auth refresh` needed. Push workflows with it directly:
+  `git -c credential.helper= push "https://x-access-token:$(gh auth token)@github.com/fkaaq505-eng/trade-signals.git" main`.
+  Normal (non-workflow) code pushes fine either way. (This is how `orb.yml` got deployed.)
 - Optional: free Finnhub key → `gh secret set FINNHUB_KEY -b"KEY" --repo fkaaq505-eng/trade-signals`.
 
 ## Files
@@ -59,9 +60,12 @@ their phone via a free cloud cron. **It never trades — the user decides and cl
 `funded.py` (prop MAE/drawdown reality check) · `fundeval.py` (eval pass/fail sim) ·
 `funded_intraday.py` (intraday hard-stop + EOD-flat) · `orb.py` (Opening Range
 Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
-`intraday_oos.py` (intraday out-of-sample test) · `data_csv.py` (load OHLCV CSV) ·
+`intraday_oos.py` (intraday OOS test, incl EMA-trend) · `orb_oos.py` (ORB OOS on real
+5m, RTH-filtered, fee-in-R) · `data_csv.py` (load OHLCV CSV) ·
 `alpaca_fetch.py` (pull real bars via Alpaca CLI, read-only) · `FUNDED.md` (research) ·
-`data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup).
+`data.py` (Yahoo fetch) · `watchlist.txt` (= SPY) · `README.md` · `NOTIFY.md` (phone setup) ·
+`.github/workflows/signal.yml` (meanrev cron, the validated edge) ·
+`.github/workflows/orb.yml` (ORB paper-plan cron, 10:00 ET, no edge).
 
 ## Next steps (in order)
 1. **Walk-forward validation — DONE (`walkforward.py`).** Verdict: **not overfit.**
@@ -151,6 +155,35 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
     Conclusion is now settled on real, deep, out-of-sample data: there is no funded
     intraday edge here. Re-pull data: `python alpaca_fetch.py SPY 5Min 2021-01-01
     spy_5m.csv` (CSVs are gitignored). NEVER run alpaca trading/position/--live cmds.
+13. **Momentum family tested OOS + ORB DEPLOYED as a PAPER push (`orb_oos.py`,
+    `orb.py`, `.github/workflows/orb.yml`).** Closed the one gap: items 7-12 were all
+    MEAN REVERSION; the momentum/breakout side (what funded survivors actually use) had
+    never hit the deep 5m data. Now it has — same verdict, NO live edge:
+    - `orb_oos.py` (RTH-filtered so the opening range = the real 9:30 ET open; fee-in-R;
+      70/30 OOS) on the 5.4y 5m data: ORB net OOS expectancy = **−0.074R/trade** after
+      fees (looked +0.029R in-sample = overfit). Added EMA-trend to `intraday_oos.py`:
+      also loses OOS (−2.7%). Both momentum AND mean-reversion now confirmed no-edge.
+    - Swept 24 ORB configs (RR × OR-window × trend-filter), tuned on TRAIN → checked
+      OOS. Train-best still loses OOS. A **trend-OFF + high-RR (3:1)** cluster showed
+      positive OOS — but year-by-year it **DECAYED**: +2021-24, flat 2025, −2026 (−11R
+      the last 12 months). Classic dead/dying edge. A "backtest till Jan 2026" cutoff
+      shows +103.6R and HIDES that funeral — never gate on a flattering end date; gate
+      on the most-recent OOS window. Did NOT promote it.
+    - **Deployed anyway as an honest PAPER forward-test** (not as an edge): new
+      `orb.yml` cron fires 10:00 ET (dual-DST crons + `near_us_open()` gate, laptop-
+      closed, `STRATEGY=orb`). The push (`notify.py:push_orb_plan`) is plain-language,
+      shows S&P 500 index "thousands" levels (SPY in brackets) + AST times + a one-order
+      bracket framing, labeled "no proven edge · paper". `meanrev` (signal.yml) is
+      untouched — still the only validated edge and still main.
+    - `orb.py` refactored: `backtest_orb_records`/`OrbTrade` expose per-trade detail;
+      `backtest_orb` keeps its (R-list, plan) shape so `notify.py` is unaffected.
+    - Industry research (WebSearch; perplexity key was 401): funded pass rate 5-10%,
+      ~80% fail on RISK MGMT not strategy, survivors risk 0.5-1%/trade. **As of
+      2026-03-01 Apex 4.0 + Topstep BAN overnight** → EOD-flat now mandatory; Topstep
+      EOD-trailing DD is easier to survive than Apex intraday-trailing. No public
+      intraday edge survives fees — matches our data. Funded success = risk discipline,
+      not a strategy. Only real perf lever left = the VIX<25 meanrev option (item 3):
+      same 82% win, ~half drawdown, less net — NOT enabled (user's call: return↔smooth).
 
 ---
 
@@ -163,9 +196,12 @@ Breakout + daily plan) · `intraday_compare.py` (accuracy-vs-profit bake-off) ·
 > STATE (May 2026): The DAILY SPY meanrev strategy is the only validated edge (82% win,
 > walk-forward-confirmed 78% out-of-sample) — keep it; it's what the phone notifier
 > pushes. The FUNDED/prop-account investigation is COMPLETE and the answer is NO EDGE:
-> ORB, intraday RSI2, VWAP, Bollinger were all tested out-of-sample on real Alpaca
-> 5-minute data (~5.4y) and ALL lose money vs buy-hold (gross edge < fees). Don't redo
-> that or chase "more accurate" — it's the win-rate trap; see HANDOFF items 7–12.
+> ORB, intraday RSI2, VWAP, Bollinger AND the momentum family (ORB high-RR, EMA-trend)
+> were all tested out-of-sample on real Alpaca 5-minute data (~5.4y) and ALL lose (gross
+> edge < fees); ORB's best config even DECAYED to negative in the last 12 months. ORB is
+> now deployed ONLY as a clearly-labeled PAPER forward-test (orb.yml, 10:00 ET cron) —
+> not an edge. Don't redo this or chase "more accurate" — it's the win-rate trap; see
+> HANDOFF items 7–13.
 >
 > Rules: free + paper-only, NEVER place real orders (the Alpaca CLI is installed but is
 > for READ-ONLY data pulls only — never trading/position/--live). Be brutally honest, no
