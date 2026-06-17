@@ -57,3 +57,5 @@ logged_at,strat,symbol,side,entry,exit,size,fee_bps,date_in,date_out,note
 2026-06-12,orb,SPY,long,740.89,741.66,85.32,1.0,2026-06-12,2026-06-12,auto:EOD-flat
 2026-06-15,orb,SPY,long,754.09,754.66,214.59,1.0,2026-06-15,2026-06-15,auto:EOD-flat
 2026-06-16,orb,SPY,short,754.0,751.84,347.22,1.0,2026-06-16,2026-06-16,auto:TP
+2026-06-17,orb,SPY,long,653.04,653.2,158.23,1.0,2026-03-24,2026-03-24,auto:EOD-flat
+2026-06-17,orb,SPY,long,751.77,749.86,261.78,1.0,2026-06-17,2026-06-17,auto:SL
